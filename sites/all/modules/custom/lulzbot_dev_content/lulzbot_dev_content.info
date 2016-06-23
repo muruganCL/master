@@ -1,0 +1,10 @@
+name = LulzBot Dev Content
+description = Development content for lulzbot.com
+core = 7.x
+
+files[] = includes/taxonomy.inc
+files[] = includes/entity.inc
+files[] = includes/node.inc
+files[] = includes/asset.inc
+files[] = lulzbot_dev_content.content.inc
+files[] = lulzbot_dev_content.interface.inc

@@ -1,0 +1,78 @@
+//
+// Product teasers
+//
+
+.products--view {
+  margin-top: vrem(10);
+
+  .view-content,
+  .view-empty {
+    // @include grid('.views-row', 3, span(1));
+    @include list--3up('.views-row');
+
+    @include bp(large) {
+      @include span(14 at 7);
+
+      .no-sidebar-filters & {
+        @include span(14 at 1);
+      }
+    }
+
+    .block + & {
+      @include bp(large) {
+        @include span(14 at 7);
+
+        .no-sidebar-filters & {
+          @include span(14 at 1);
+        }
+      }
+    }
+  }
+
+  .commerce-product-field-commerce-price {
+    font-family: inherit;
+    @include font-size(body--small);
+
+    .flexbox & {
+      justify-content: flex-start;
+    }
+  }
+}
+
+.product-filter-top {
+  margin-top: vrem(8);
+  @include rule(bottom);
+
+  .block-content {
+    width: 100%;
+  }
+
+  #edit-field-part-part-types-tid-wrapper,
+  #edit-field-part-compatible-printers-tid-wrapper,
+  .views-widget-filter-field_filament_compatiblity_tid,
+  .views-widget-filter-field_filament_weight_tid,
+  .views-widget-filter-field_filament_materials_tid,
+  .views-widget-filter-field_filament_applications_tid,
+  .views-widget-filter-field_tool_head_compatiblity_tid {
+    display: none;
+    visibility: collapse;
+  }
+
+  .flexbox & {
+    @include bp(medium-large) {
+      .views-exposed-widgets {
+        width: 100%;
+        display: flex;
+        align-items: flex-end;
+      }
+
+      .views-widget-filter-keys,
+      .views-widget-filter-combine {
+        order: 1;
+        margin-left: auto;
+        margin-bottom: vrem(1);
+        align-self: flex-end;
+      }
+    }
+  }
+}

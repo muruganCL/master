@@ -1,0 +1,318 @@
+<?php
+
+/**
+ * @file
+ * Main file of the commerce_piwik module.
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a configuration page.
+ */
+function commerce_piwik_menu() {
+  $items['admin/commerce/config/piwik'] = array(
+    'title' => t('Commerce Piwik'),
+    'description' => t('Configure the Commerce Piwik module'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_piwik_config_form'),
+    'access arguments' => array('configure commerce piwik'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implement hook_permission().
+ *
+ * Defines permissions for configuring this module.
+ */
+function commerce_piwik_permission() {
+  return array(
+    'configure commerce piwik' => array(
+      'title' => t('Configure the Commerce Piwik module'),
+      'description' => t('Allows a user to configure the Commerce Piwik module'),
+    ),
+  );
+}
+
+/**
+ * Provides a module configuration page.
+ */
+function commerce_piwik_config_form($form, $form_state) {
+  $form['commerce_piwik_token'] = array(
+    '#type' => 'password',
+    '#title' => t('Piwik Authorization Token'),
+    '#description' => t('This token authorizes this service to log tracking events on behalf of other users. Do <strong>not</strong> add this if you are not sure that you need it.'),
+    '#default_value' => "",
+  );
+
+  $form['commerce_piwik_token_auth'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Token Based Authentication'),
+    '#description' => t('Enables token based authentication.'),
+    '#default_value' => variable_get('commerce_piwik_token_auth', 0),
+  );
+
+  $form['commerce_piwik_enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Commerce Piwik'),
+    '#description' => t('Send data to Piwik. <em>This should only be enabled in production.</em>'),
+    '#default_value' => variable_get('commerce_piwik_enabled', 0),
+  );
+
+  $form['commerce_piwik_track_ip'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Track User IP Address'),
+    '#description' => t('Piwik attempts to correlate tracking requests with an IP to generate geographic data. However, because the Commerce Piwik module runs on the server, the server\'s IP is always used. In order to correct this, we can manually set the user\'s IP on the tracking request. This <strong>requires</strong> an authorization token.'),
+    '#default_value' => variable_get('commerce_piwik_track_ip', 0),
+  );
+
+  $form['configure_piwik'] = array(
+    '#markup' => t(
+      'Configure connection settings for your Piwik server !link.<br>',
+      array('!link' => l(t('here'), 'admin/config/system/piwik'))
+    ),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validate callback for the commerce_piwik settings form.
+ */
+function commerce_piwik_config_form_validate($form, $form_state) {
+  $token_auth = $form_state['values']['commerce_piwik_token_auth'];
+  $token = $form_state['values']['commerce_piwik_token'];
+
+  if ($token_auth && strlen($token) != 32) {
+      form_set_error('commerce_piwik_token_auth', t('You must provide a valid token if you enable token based authentication.'));
+  }
+
+  $track_ip = $form_state['values']['commerce_piwik_track_ip'];
+
+  if ($track_ip && !$token_auth) {
+      form_set_error('commerce_piwik_token_auth', t('You must enable token based authentication if you would like to track user IPs.'));
+  }
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ *
+ * Sends order data to Piwik on checkout completion.
+ */
+function commerce_piwik_commerce_checkout_complete($order) {
+  if (!variable_get('commerce_piwik_enabled')) {
+    return;
+  }
+
+  if (!$tracker = _commerce_piwik_new_piwik_tracker()) {
+    return;
+  }
+
+  $token_auth = variable_get('commerce_piwik_token', "");
+  if (strlen($token_auth) > 0) {
+    commerce_piwik_set_token_auth($tracker, $token_auth);
+  }
+
+  if (variable_get('commerce_piwik_track_ip', 0)) {
+    commerce_piwik_add_ip($tracker, ip_address());
+  }
+
+  commerce_piwik_add_line_items($order, $tracker);
+  commerce_piwik_track_order($order, $tracker);
+}
+
+/**
+ * Implements hook_libraries_info().
+ *
+ * Defines the Piwik PHP library as a libraries requirement.
+ */
+function commerce_piwik_libraries_info() {
+	$libraries['piwik'] = array(
+		'name' => 'Piwik PHP Client Library',
+		'vendor url' => 'https://github.com/piwik/piwik-php-tracker',
+		'download url' => 'https://github.com/piwik/piwik-php-tracker/releases',
+    'version callback' => 'commerce_piwik_version_callback',
+    'files' => array(
+      'php' => array(
+        'PiwikTracker.php'
+      ),
+		),
+	);
+
+	return $libraries;
+}
+
+/**
+ * Satisfies hook_libraries_info's version requirement.
+ */
+function commerce_piwik_version_callback() {
+  return TRUE;
+}
+
+/**
+ * Sets up token authentication on a given piwik tracker object.
+ */
+function commerce_piwik_set_token_auth($tracker, $token_auth) {
+  try {
+    $tracker->setTokenAuth($token_auth);
+  } catch (Exception $e) {
+    watchdog(
+      'commerce_piwik',
+      'Unable to set token based authentication on Piwik tracker. Exception: %e',
+      array('%e' => $e),
+      WATCHDOG_ERROR
+    );
+  }
+}
+
+/**
+ * Sets an IP on the given tracker.
+ */
+function commerce_piwik_add_ip($tracker, $ip) {
+  if (!isset($tracker->token_auth) || strlen($tracker->token_auth) == 0) {
+    watchdog(
+      'commerce_piwik',
+      'Unable to set IP, @ip, on Piwik tracker. Must first set token for token based authentication.',
+      array('@ip' => $ip),
+      WATCHDOG_NOTICE
+    );
+    return;
+  }
+
+  try {
+    $tracker->setIp($ip);
+  } catch (Exception $e) {
+    watchdog(
+      'commerce_piwik',
+      'Unable to set IP, @ip, on Piwik tracker. Exception: %e',
+      array(
+        '@ip' => $ip,
+        '%e' => $e,
+      ),
+      WATCHDOG_ERROR
+    );
+  }
+}
+
+/**
+ * Adds any line items from an order to the Piwik tracker.
+ */
+function commerce_piwik_add_line_items($order, $tracker) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  foreach ($order_wrapper->commerce_line_items->getIterator() as $line_item) {
+    if ($line_item->type->value() == 'product') {
+      commerce_piwik_add_line_item($line_item, $tracker);
+    }
+  }
+}
+
+/**
+ * Add a single line item to the Piwik tracker.
+ */
+function commerce_piwik_add_line_item($line_item, $tracker) {
+  try {
+    $tracker->addEcommerceItem(
+      $line_item->commerce_product->sku->value(),
+      $line_item->commerce_product->title->value(),
+      array($line_item->commerce_product->type->value()),
+      _commerce_piwik_convert_price_value($line_item->commerce_unit_price->amount->value()),
+      $line_item->quantity->value()
+    );
+  } catch (Exception $e) {
+    watchdog(
+      'commerce_piwik',
+      'Unable to add line item to Piwik tracker. Exception: %e',
+      array('%e' => $e),
+      WATCHDOG_ERROR
+    );
+  }
+}
+
+/**
+ * Send an order to Piwik for tracking.
+ */
+function commerce_piwik_track_order($order, $tracker) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $components = $order_wrapper->commerce_order_total->data->value()['components'];
+
+  $track = array(
+    'order_id'    => $order_wrapper->order_id->value(),
+    'grandtotal'  => commerce_piwik_get_subset_total($components),
+    'subtotal'    => commerce_piwik_get_subset_total($components, 'base_price'),
+    'tax'         => commerce_piwik_get_subset_total($components, 'tax'),
+    'shipping'    => commerce_piwik_get_subset_total($components, 'shipping'),
+    'discount'    => commerce_piwik_get_subset_total($components, 'discount'),
+  );
+
+  // This could be done with call_user_func_array, but this seems more clear.
+  $response = $tracker->doTrackEcommerceOrder(
+    $track['order_id'],
+    $track['grandtotal'],
+    $track['subtotal'],
+    $track['tax'],
+    $track['shipping'],
+    $track['discount']
+  );
+}
+
+/**
+ * Get a subset total from an order's price components.
+ */
+function commerce_piwik_get_subset_total($components, $total_type = NULL) {
+  if (isset($total_type)) {
+    $filter = _commerce_piwik_new_component_filter($total_type);
+    $subset = array_filter($components, $filter);
+  } else {
+    $subset = $components;
+  }
+
+  return _commerce_piwik_convert_price_value(
+    array_reduce($subset, '_commerce_piwik_reduce_total', 0)
+  );
+}
+
+/**
+ * Returns a component filtering function.
+ */
+function _commerce_piwik_new_component_filter($component_type) {
+  return function ($component) use ($component_type) {
+    return is_numeric(strpos($component['name'], $component_type));
+  };
+}
+
+/**
+ * Sum commerce price components.
+ */
+function _commerce_piwik_reduce_total($running_total, $component) {
+  return $running_total + $component['price']['amount'];
+}
+
+/**
+ * Get Piwik compatible float from commerce price amount value.
+ */
+function _commerce_piwik_convert_price_value($price) {
+  return (float) $price/100;
+}
+
+/**
+ * Get a new instance of a PiwikTracker.
+ */
+function _commerce_piwik_new_piwik_tracker() {
+  $loaded = libraries_load('piwik');
+  if (!$loaded['loaded']) {
+    watchdog('commerce_piwik', 'Unable to load Piwik PHP Client Library',
+      array(), WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+
+  $site_id = variable_get('piwik_site_id');
+  // If there's no HTTPS url, get HTTP
+  $piwik_url = variable_get('piwik_url_https');
+  $piwik_url ? $piwik_url : variable_get('piwik_url_http');
+
+  return new PiwikTracker($site_id, $piwik_url);
+}

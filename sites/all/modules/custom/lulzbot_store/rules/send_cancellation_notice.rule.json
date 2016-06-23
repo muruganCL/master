@@ -1,0 +1,22 @@
+{ "rules_send_cancellation_notice" : {
+    "LABEL" : "Send cancellation notice",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "store" ],
+    "REQUIRES" : [ "rules", "entity" ],
+    "ON" : { "commerce_order_update" : [] },
+    "IF" : [
+      { "data_is" : { "data" : [ "commerce-order:status" ], "value" : "canceled" } },
+      { "NOT data_is" : { "data" : [ "commerce-order-unchanged:status" ], "value" : "canceled" } }
+    ],
+    "DO" : [
+      { "mail" : {
+          "to" : "[commerce-order:mail]",
+          "subject" : "LulzBot.com Order [commerce-order:order-number] was canceled",
+          "message" : "Hello,\r\n\r\nWe wanted to let you know that LulzBot.com Order [commerce-order:order-number] was canceled. This may be due to payment verification or fraud protection. If this order should not be canceled, please contact us.",
+          "language" : [ "" ]
+        }
+      }
+    ]
+  }
+}

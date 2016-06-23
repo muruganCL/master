@@ -1,0 +1,1 @@
+!function(t){Drupal.behaviors.CToolsBulkExport={attach:function(e){t("#bulk-export-export-form .vertical-tabs-pane",e).drupalSetSummary(function(e){return t(".bulk-selection input:checked",e).length>0?Drupal.t("Exportables selected"):""}),t(".select-all").bind("click",function(e){t(this,".vertical-tabs-pane").drupalSetSummary(e)})}}}(jQuery);

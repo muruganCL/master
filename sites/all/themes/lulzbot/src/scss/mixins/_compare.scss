@@ -1,0 +1,19 @@
+//
+// Compare reusable mixins
+//
+
+@mixin spec-label {
+  vertical-align: middle;
+  text-align: center;
+  font-family: $ff-lato-regular;
+  font-style: italic;
+  font-weight: $fw-regular;
+  background-color: $gray-white;
+}
+
+@mixin spec-field {
+  vertical-align: middle;
+  text-align: center;
+  font-family: $ff-titillium-semibold;
+  @include font-size(table-cell);
+}

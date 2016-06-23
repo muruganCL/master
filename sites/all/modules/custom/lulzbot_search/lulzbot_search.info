@@ -1,0 +1,7 @@
+name = LulzBot Search
+description = Search customizations
+core = 7.x
+
+dependencies[] = lulzbot_deploy
+dependencies[] = apachesolr
+dependencies[] = apachesolr_search

@@ -1,0 +1,134 @@
+<?php
+/**
+ * Find content files.
+ */
+function lulzbot_dev_content_find_files($path) {
+  $items = file_scan_directory($path, '/^.+\.yml$/');
+  return $items;
+}
+
+/**
+ * Parse the file
+ */
+function lulzbot_dev_content_parse_file($filepath) {
+  if (function_exists('yaml_parse_file')) {
+    return yaml_parse_file($filepath);
+  }
+
+  return FALSE;
+}
+
+/**
+ * Return the handler.
+ */
+function lulzbot_dev_content_get_handler($data) {
+  $handler = NULL;
+  if (isset($data['vocabulary'])) {
+    module_load_include('inc', 'lulzbot_dev_content', 'includes/taxonomy');
+    $handler = 'DevContentTaxonomyItem';
+  }
+  elseif (isset($data['entity_type']) && $data['entity_type'] === 'node') {
+    module_load_include('inc', 'lulzbot_dev_content', 'includes/node');
+    $handler = 'DevContentNodeItem';
+  }
+  elseif (isset($data['entity_type']) && $data['entity_type'] !== 'node') {
+    module_load_include('inc', 'lulzbot_dev_content', 'includes/entity');
+    $handler = 'DevContentEntityItem';
+  }
+  return $handler;
+}
+
+/**
+ * Filter out processed files from the tree.
+ */
+function lulzbot_dev_content_filter_processed_files($file) {
+  if (!$file['processed']) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Process the content
+ */
+function lulzbot_dev_content_process($filename, $data) {
+  // figure out handler
+  // TODO refactor this into something sane
+  $handler = lulzbot_dev_content_get_handler($data);
+
+  if (!$handler) {
+    if (function_exists('drush_log')) {
+      drush_log(t('Could not figure out handler for !filename', array('!filename' => $filename)), 'error');
+    }
+    return FALSE;
+  }
+
+  foreach ($data['items'] as $item) {
+    $item_handler = new $handler($filename, $item, $data);
+
+    // check if this already exists
+    $map_exists = $item_handler->mapExists();
+    $item_exists = $item_handler->exists();
+    if ($map_exists && $item_exists) {
+      $item_handler->update();
+      continue;
+    }
+
+    if ($map_exists && !$item_exists) {
+      drush_log(t('Map exists for !machine_name but content does not exist', array('!machine_name' => $item_handler->machineName())), 'error');
+      continue;
+    }
+
+    // if the map does not exist and the content does, then we need to add a
+    // locked map item.
+    if (!$map_exists && $item_exists) {
+      $item_handler->addMap($item_exists, TRUE);
+      continue;
+    }
+
+    // the map does not exist and the item does not exist so create it
+    $item = $item_handler->create();
+    if ($item) {
+      $item_handler->addMap($item);
+    }
+  }
+}
+
+/**
+ * Rollback content we added.
+ */
+function lulzbot_dev_content_rollback($path) {
+  $items = db_select('dev_content_map', 'm')
+    ->fields('m')
+    ->execute();
+  $files = array();
+  while ($item = $items->fetchAssoc()) {
+    if (!isset($files[$item['file']])) {
+      $file_path = $path . '/' . $item['file'];
+      $files[$item['file']] = lulzbot_dev_content_parse_file($uri);
+      $handler = lulzbot_dev_content_get_handler($files[$item['file']]);
+      $files[$item['file']]['handler'] = $handler;
+    }
+    else {
+      $handler = $files[$item['file']]['handler'];
+    }
+
+    $item_handler = new $handler($item['file'], $item, $data);
+  }
+}
+
+/**
+ * Assert that we have an upload directory to upload files.
+ */
+function lulzbot_dev_content_assert_upload_directory() {
+  if (!file_exists('public://dev_content_assets')) {
+    mkdir('public://dev_content_assets');
+  }
+}
+
+/**
+ * Create the path to this asset.
+ */
+function lulzbot_dev_content_assets_path($basename) {
+  return 'public://dev_content_assets/' . $basename;
+}

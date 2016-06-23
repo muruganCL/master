@@ -1,0 +1,7 @@
+//
+// Rules
+//
+
+@mixin rule($location: bottom, $color: $clr-border) {
+  border-#{$location}: 1px solid $color;
+}

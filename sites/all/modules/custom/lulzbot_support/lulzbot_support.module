@@ -1,0 +1,147 @@
+<?php
+
+/**
+ * Implements hook_node_access().
+ */
+function lulzbot_support_node_access($node, $op, $account) {
+  // Redirect unpublished nodes to corresponding support nodes where applicable
+  if ($op == 'view'
+      && $node->status == NODE_NOT_PUBLISHED
+      && arg(0) == 'node'
+      && arg(1) == $node->nid) {
+
+    $query = new EntityFieldQuery();
+    $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'support')
+      ->propertyCondition('status', 1)
+      ->fieldCondition('field_support_product', 'target_id', $node->nid)
+      ->range(0,1);
+
+    $result = $query->execute();
+    if (!empty($result['node'])) {
+      drupal_goto('node/' . key($result['node']));
+    }
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function lulzbot_support_cron() {
+  //lulzbot_support_bulk_add_support_nodes();
+}
+
+/**
+ * Return an array of all product node bundles (content types).
+ */
+function lulzbot_support_get_product_bundles() {
+  $info = field_info_field('field_product_reference');
+  $bundles = $info['bundles']['node'];
+  return $bundles;
+}
+
+/**
+ * Queue up support nodes to be automatically generated with cron().
+ */
+function lulzbot_support_bulk_add_support_nodes() {
+  $bundles = lulzbot_support_get_product_bundles();
+  $query = "SELECT nid FROM {node}
+              WHERE type IN (:bundles)
+              AND nid NOT IN (
+                SELECT field_support_product_target_id FROM {field_data_field_support_product}
+                )";
+  $result = db_query($query, array(':bundles' => $bundles));
+  $queue = DrupalQueue::get('lulzbot_support_create_support_nodes');
+  foreach ($result as $record) {
+    $queue->createItem($record->nid);
+  }
+}
+
+/**
+ * Implementation of hook_cron_queue_info()
+ */
+function lulzbot_support_cron_queue_info() {
+  $queues['lulzbot_support_create_support_nodes'] = array(
+    'worker callback' => 'lulzbot_support_create_support_node',
+    'time' => 180,
+    );
+  return $queues;
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function lulzbot_support_node_insert($node) {
+  $product_bundles = lulzbot_support_get_product_bundles();
+  if (in_array($node->type, $product_bundles)) {
+    lulzbot_support_create_support_node($node->nid, $node->uid);
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ *
+ * Publish support nodes when the product is published (if the support node
+ * is not already published).
+ */
+function lulzbot_support_node_update($node) {
+  $bundles = lulzbot_support_get_product_bundles();
+  if (!in_array($node->type, $bundles)) {
+    return;
+  }
+
+  if ($node->original->status == 0 && $node->status == 1) {
+    $support_nodes = db_query('SELECT entity_id FROM field_data_field_support_product WHERE field_support_product_target_id=:nid', array(':nid' => $node->nid))->fetchAll();
+    $support_node_nids = array();
+    foreach ($support_nodes as $support_node) {
+      $support_node_nids[] = intval($support_node->entity_id);
+    }
+
+    // publish the node
+    db_update('node')
+      ->fields(array('status' => 1))
+      ->condition('status', 0, '=')
+      ->condition('nid', $support_node_nids, 'IN')
+      ->execute();
+  }
+}
+
+/**
+ * Create a support node.
+ *
+ * @param int $product_node_nid
+ *   The product display node NID.
+ * @param int $uid
+ *   The user ID to use for creation of the node.
+ */
+function lulzbot_support_create_support_node($product_node_nid, $uid = 1) {
+  $node_info = db_query('SELECT title, status FROM {node} WHERE nid = :nid', array(':nid' => $product_node_nid))->fetchAssoc();
+  $node = new stdClass();
+  $node->type = 'support';
+  $node->title = $node_info['title'];
+  node_object_prepare($node);
+  $node->status = intval($node_info['status']);
+  $node->language = LANGUAGE_NONE;
+  $node->uid = $uid;
+  $node->promote = 0;
+  $node->comment = 0;
+  $node->field_support_product[LANGUAGE_NONE][0]['target_id'] = array($product_node_nid);
+  $node = node_submit($node);
+  node_save($node);
+  watchdog('lulzbot_support', 'Support node created for %title', array('%title' => $node_info['title']), WATCHDOG_NOTICE, l('Support node', 'node/' . $node->nid));
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function lulzbot_support_views_api() {
+  return array('api' => 3.0);
+}
+
+/**
+ * Implements hook_views_default_views().
+ */
+function lulzbot_support_views_default_views() {
+  return stools_views_from_directory_scan('lulzbot_support');
+}

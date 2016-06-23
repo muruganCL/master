@@ -1,0 +1,1 @@
+!function(e){Drupal.behaviors.currentSearch={attach:function(r){"undefined"!=typeof jQuery.fn.drupalSetSummary&&e("fieldset#edit-current-search",r).drupalSetSummary(function(r){var t=e('input[name="searcher"]:checked',r);return t.next("label").text()})}}}(jQuery);

@@ -1,0 +1,5 @@
+name = Lulzbot Base Config
+description = 'Base configuration for Lulzbot.'
+core = 7.x
+
+dependencies[] = lulzbot_base

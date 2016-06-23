@@ -1,0 +1,15 @@
+//
+// Blocks component manifest
+//
+
+// @import '';
+
+.block-title {
+  margin-bottom: vrem(4);
+  @include font-size(block--title);
+}
+
+.block-background {
+  @include block-background;
+  padding: vrem(10);
+}

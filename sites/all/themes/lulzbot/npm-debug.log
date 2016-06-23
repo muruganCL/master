@@ -1,0 +1,144 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/local/bin/node',
+1 verbose cli   '/usr/local/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'eyeglass',
+1 verbose cli   '--save-dev' ]
+2 info using npm@2.11.3
+3 info using node@v0.12.7
+4 verbose install initial load of /Users/jmiller/Sites/lulz/lulz.dev/package.json
+5 warn package.json lulzbot@0.0.0 No description
+6 warn package.json lulzbot@0.0.0 No repository field.
+7 verbose installManyTop reading scoped package data from /Users/jmiller/Sites/lulz/lulz.dev/node_modules/breakpoint-sass/package.json
+8 verbose installManyTop reading scoped package data from /Users/jmiller/Sites/lulz/lulz.dev/node_modules/susy/package.json
+9 verbose readDependencies loading dependencies from /Users/jmiller/Sites/lulz/lulz.dev/package.json
+10 silly cache add args [ 'eyeglass', null ]
+11 verbose cache add spec eyeglass
+12 silly cache add parsed spec { raw: 'eyeglass',
+12 silly cache add   scope: null,
+12 silly cache add   name: 'eyeglass',
+12 silly cache add   rawSpec: '',
+12 silly cache add   spec: '*',
+12 silly cache add   type: 'range' }
+13 silly addNamed eyeglass@*
+14 verbose addNamed "*" is a valid semver range for eyeglass
+15 silly addNameRange { name: 'eyeglass', range: '*', hasData: false }
+16 silly mapToRegistry name eyeglass
+17 silly mapToRegistry using default registry
+18 silly mapToRegistry registry https://registry.npmjs.org/
+19 silly mapToRegistry uri https://registry.npmjs.org/eyeglass
+20 verbose addNameRange registry:https://registry.npmjs.org/eyeglass not in flight; fetching
+21 verbose request uri https://registry.npmjs.org/eyeglass
+22 verbose request no auth needed
+23 info attempt registry request try #1 at 8:49:36 AM
+24 verbose request id 7a1a370ab8923fad
+25 verbose etag "9F01E3XBF6791ADMA9IO8Q8H9"
+26 http request GET https://registry.npmjs.org/eyeglass
+27 http 304 https://registry.npmjs.org/eyeglass
+28 silly get cb [ 304,
+28 silly get   { date: 'Tue, 28 Jul 2015 14:49:37 GMT',
+28 silly get     via: '1.1 varnish',
+28 silly get     'cache-control': 'max-age=60',
+28 silly get     etag: '"9F01E3XBF6791ADMA9IO8Q8H9"',
+28 silly get     age: '0',
+28 silly get     connection: 'keep-alive',
+28 silly get     'x-served-by': 'cache-ord1724-ORD',
+28 silly get     'x-cache': 'MISS',
+28 silly get     'x-cache-hits': '0',
+28 silly get     'x-timer': 'S1438094977.058188,VS0,VE187',
+28 silly get     vary: 'Accept' } ]
+29 verbose etag https://registry.npmjs.org/eyeglass from cache
+30 verbose get saving eyeglass to /Users/jmiller/.npm/registry.npmjs.org/eyeglass/.cache.json
+31 silly addNameRange number 2 { name: 'eyeglass', range: '*', hasData: true }
+32 silly addNameRange versions [ 'eyeglass',
+32 silly addNameRange   [ '0.0.1',
+32 silly addNameRange     '0.1.1',
+32 silly addNameRange     '0.1.2',
+32 silly addNameRange     '0.1.3',
+32 silly addNameRange     '0.1.4',
+32 silly addNameRange     '0.1.5',
+32 silly addNameRange     '0.2.0',
+32 silly addNameRange     '0.3.0',
+32 silly addNameRange     '0.4.0' ] ]
+33 silly addNamed eyeglass@0.4.0
+34 verbose addNamed "0.4.0" is a plain semver version for eyeglass
+35 silly cache afterAdd eyeglass@0.4.0
+36 verbose afterAdd /Users/jmiller/.npm/eyeglass/0.4.0/package/package.json not in flight; writing
+37 verbose afterAdd /Users/jmiller/.npm/eyeglass/0.4.0/package/package.json written
+38 silly install resolved [ { name: 'eyeglass',
+38 silly install resolved     description: 'Sass modules for npm.',
+38 silly install resolved     version: '0.4.0',
+38 silly install resolved     author:
+38 silly install resolved      { name: 'The eyeglass team and contributors',
+38 silly install resolved        url: 'https://github.com/sass-eyeglass/eyeglass/graphs/contributors' },
+38 silly install resolved     engines: { node: '>=0.12' },
+38 silly install resolved     license: 'Apache-2.0',
+38 silly install resolved     main: 'lib/index.js',
+38 silly install resolved     README: 'README.md',
+38 silly install resolved     scripts: { test: './test.sh' },
+38 silly install resolved     repository:
+38 silly install resolved      { type: 'git',
+38 silly install resolved        url: 'git+https://github.com/sass-eyeglass/eyeglass.git' },
+38 silly install resolved     keywords: [ 'sass', 'eyeglass-module' ],
+38 silly install resolved     eyeglass: { exports: 'lib/eyeglass-exports' },
+38 silly install resolved     dependencies:
+38 silly install resolved      { deasync: '0.0.10',
+38 silly install resolved        'fs-extra': '^0.22.1',
+38 silly install resolved        glob: '^5.0.13',
+38 silly install resolved        'node-sass': '^3.1.0',
+38 silly install resolved        'node-sass-utils': '^1.0.0',
+38 silly install resolved        semver: '^4.2.0',
+38 silly install resolved        tmp: '0.0.25' },
+38 silly install resolved     devDependencies:
+38 silly install resolved      { eslint: '^0.14.1',
+38 silly install resolved        'eyeglass-dev-eslint': '^1.0.1',
+38 silly install resolved        grunt: '^0.4.5',
+38 silly install resolved        'grunt-release': '^0.12.0',
+38 silly install resolved        gulp: '^3.8.11',
+38 silly install resolved        'gulp-eslint': '0.4.0',
+38 silly install resolved        'gulp-istanbul': '^0.9.0',
+38 silly install resolved        'gulp-mocha': '^2.0.0',
+38 silly install resolved        mocha: '^2.1.0',
+38 silly install resolved        should: '>= 0.0.1' },
+38 silly install resolved     gitHead: 'd823ed9a00b5ed6c93419b9597401150c0f6ec34',
+38 silly install resolved     bugs: { url: 'https://github.com/sass-eyeglass/eyeglass/issues' },
+38 silly install resolved     homepage: 'https://github.com/sass-eyeglass/eyeglass',
+38 silly install resolved     _id: 'eyeglass@0.4.0',
+38 silly install resolved     _shasum: '130ee9165780de762d3a6df2fb369e18167534a7',
+38 silly install resolved     _from: 'eyeglass@*',
+38 silly install resolved     _npmVersion: '2.7.5',
+38 silly install resolved     _nodeVersion: '0.12.2',
+38 silly install resolved     _npmUser: { name: 'chriseppstein', email: 'chris@eppsteins.net' },
+38 silly install resolved     maintainers: [ [Object] ],
+38 silly install resolved     dist:
+38 silly install resolved      { shasum: '130ee9165780de762d3a6df2fb369e18167534a7',
+38 silly install resolved        tarball: 'http://registry.npmjs.org/eyeglass/-/eyeglass-0.4.0.tgz' },
+38 silly install resolved     directories: {},
+38 silly install resolved     _resolved: 'https://registry.npmjs.org/eyeglass/-/eyeglass-0.4.0.tgz',
+38 silly install resolved     readme: 'ERROR: No README data found!' } ]
+39 info install eyeglass@0.4.0 into /Users/jmiller/Sites/lulz/lulz.dev
+40 info installOne eyeglass@0.4.0
+41 verbose installOne of eyeglass to /Users/jmiller/Sites/lulz/lulz.dev not in flight; installing
+42 warn locking Error: EACCES, open '/Users/jmiller/.npm/_locks/eyeglass-9ad61518f34e5e5d.lock'
+42 warn locking     at Error (native)
+42 warn locking  /Users/jmiller/.npm/_locks/eyeglass-9ad61518f34e5e5d.lock failed { [Error: EACCES, open '/Users/jmiller/.npm/_locks/eyeglass-9ad61518f34e5e5d.lock']
+42 warn locking   errno: -13,
+42 warn locking   code: 'EACCES',
+42 warn locking   path: '/Users/jmiller/.npm/_locks/eyeglass-9ad61518f34e5e5d.lock' }
+43 verbose stack Error: Attempt to unlock /Users/jmiller/Sites/lulz/lulz.dev/node_modules/eyeglass, which hasn't been locked
+43 verbose stack     at unlock (/usr/local/lib/node_modules/npm/lib/utils/locker.js:66:11)
+43 verbose stack     at cb (/usr/local/lib/node_modules/npm/lib/install.js:1017:5)
+43 verbose stack     at /usr/local/lib/node_modules/npm/lib/install.js:1021:20
+43 verbose stack     at /usr/local/lib/node_modules/npm/lib/utils/locker.js:40:9
+43 verbose stack     at cb (/usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:149:38)
+43 verbose stack     at /usr/local/lib/node_modules/npm/node_modules/lockfile/lockfile.js:177:38
+43 verbose stack     at FSReqWrap.oncomplete (fs.js:95:15)
+44 verbose cwd /Users/jmiller/Sites/lulz/lulz.dev/public_html/sites/all/themes/lulzbot
+45 error Darwin 14.3.0
+46 error argv "/usr/local/bin/node" "/usr/local/bin/npm" "install" "eyeglass" "--save-dev"
+47 error node v0.12.7
+48 error npm  v2.11.3
+49 error Attempt to unlock /Users/jmiller/Sites/lulz/lulz.dev/node_modules/eyeglass, which hasn't been locked
+50 error If you need help, you may report this error at:
+50 error     <https://github.com/npm/npm/issues>
+51 verbose exit [ 1, true ]

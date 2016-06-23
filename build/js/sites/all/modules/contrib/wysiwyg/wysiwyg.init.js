@@ -1,0 +1,1 @@
+Drupal.wysiwyg=Drupal.wysiwyg||{instances:{},excludeIdSelectors:{}},Drupal.wysiwyg.editor=Drupal.wysiwyg.editor||{init:{},attach:{},detach:{},instance:{}},Drupal.wysiwyg.plugins=Drupal.wysiwyg.plugins||{},function(a){try{document.queryCommandEnabled("__wysiwygTestCommand"),a.support.queryCommandEnabled=!1}catch(y){a.support.queryCommandEnabled=!0}}(jQuery);

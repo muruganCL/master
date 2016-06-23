@@ -1,0 +1,5 @@
+<ul class="store-category-toggle product-filter-top no-bullets">
+  {% for category, label in categories %}
+    <li><input type="checkbox" class="category-toggle" name="categories" value="{{ category }}" id="store-category-{{category}}" checked="checked" /> <label for="store-category-{{category}}">{{label}}</label></li>
+  {% endfor %}
+</ul>

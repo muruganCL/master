@@ -1,0 +1,41 @@
+// Layout
+//
+// Grid.
+//
+$grid-column-count: 20;
+$grid-gutter-width: 0;
+
+
+$susy: (
+  columns: $grid-column-count,
+  global-box-sizing: border-box,
+  gutters: $grid-gutter-width,
+  math: fluid,
+  output: isolate,
+  gutter-position: inside,
+);
+
+
+
+
+// Width.
+$w-full-small: 1384px;
+$w-full: 1384px;
+$w-full-large: 1600px;
+$w-content: 620px;
+$w-sidebar: 320px;
+$w-sidebar-first: 320px;
+$w-gutter: 30px;
+$w-gutter-half: $w-gutter / 2;
+
+// Setting element spacing
+// 2, 4, 6, 8
+$sp-tight:  12px;
+$sp-normal: 24px;
+$sp-loose:  36px;
+$sp-sparse: 48px;
+
+//
+// Section spacing scale
+// default 4, 8, 10, 16
+// small 6, 12, 16, 24

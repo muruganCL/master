@@ -1,0 +1,13 @@
+{ "place_signifyd_case" : {
+    "LABEL" : "Place Signifyd Case",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "WEIGHT" : "2",
+    "TAGS" : [ "lulzbot", "signifyd" ],
+    "REQUIRES" : [ "commerce_payment", "commerce_signifyd", "commerce_checkout" ],
+    "ON" : { "commerce_checkout_complete" : [] },
+    "DO" : [
+      { "commerce_signifyd_submit_case" : { "commerce_order" : [ "commerce_order" ] } }
+    ]
+  }
+}

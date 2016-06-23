@@ -1,0 +1,20 @@
+//
+// Features
+//
+
+@mixin feature-parallax($color, $grayscale: false) {
+  position: absolute;
+  top: 0;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  background-size: cover;
+  z-index: -1;
+  @if $color {
+    background-color: $color;
+    background-blend-mode: multiply;
+  }
+  @if $grayscale {
+    filter: grayscale(1);
+  }
+}

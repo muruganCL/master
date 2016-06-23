@@ -1,0 +1,1 @@
+!function(a){Drupal.behaviors.commercePaypalEc={attach:function(p,l){a(".paypal-bml-popin-text").hide(),a(".paypal-bml-popin").click(function(p){p.preventDefault(),a(".paypal-bml-popin-text").dialog({modal:!0})})}}}(jQuery);

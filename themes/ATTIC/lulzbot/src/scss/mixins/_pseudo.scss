@@ -1,0 +1,10 @@
+//
+// Pseudo element helpers.
+//
+@mixin pseudo-box($width: 40px, $height: $width, $content: '') {
+  content: $content;
+  display: inline-block;
+  width: $width;
+  height: $height;
+  background-position: center;
+}

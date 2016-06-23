@@ -1,0 +1,16 @@
+//
+// Breakpoint variables.
+//
+$breakpoints: (
+  default:  480px,
+  small:    600px,
+  medium:   768px,
+  medium-large: 875px,
+  large:    992px,
+  larger:   1180px,
+  x-large:  1384px,
+  xx-large: 1500px,
+  xxx-large: 1600px,
+  country--select:  1350px,
+  printer--larger: 1150px,
+);

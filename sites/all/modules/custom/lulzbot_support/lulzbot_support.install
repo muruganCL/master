@@ -1,0 +1,107 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_support_enable() {
+  lulzbot_support_create_support_content_type();
+  lulzbot_support_set_variables();
+  lulzbot_support_create_beans();
+  lulzbot_support_create_context();
+}
+
+/**
+ * Create content types.
+ */
+function lulzbot_support_create_support_content_type() {
+  //Support content type
+  CINC::init('ContentType')
+    ->machine_name('support')
+    ->set('title_label', 'Support')
+    ->set('description', 'A support page for a specific product.')
+    ->set('pathauto', 'support/[node:title]')
+    ->create_or_update();
+
+  // Product reference field
+  CINC::init('EntityReferenceField')
+    ->machine_name('field_support_product')
+    ->set_instance('settings.handler_settings', array(
+        'target_bundles' => array(
+          'filament' => 'filament',
+          'merchandise' => 'merchandise',
+          'part' => 'part',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+        ),
+      )
+    )
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Product')
+    ->set_instance('description', 'Select the product that this support page relates to.')
+    ->set_instance('display.default.type', 'hidden')
+    ->set_instance('display.default.settings.view_mode', 'teaser')
+    ->create_or_update_instance_for('node', 'support');
+
+  // Downloads file field
+  CINC::init('FileField')
+    ->machine_name('field_support_files')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Download files')
+    ->set_instance('description', 'Upload files related to this documentation page. Then link to those files in the Downloads text field below.')
+    ->set_instance('file_extensions', 'doc, odt, pdf, txt')
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update_instance_for('node', 'support');
+
+  // Downloads text field
+  CINC::init('LongTextField')
+    ->machine_name('field_support_downloads')
+    ->create_or_update()
+    ->set_instance('label', 'Downloads')
+    ->set_instance('widget.settings.rows', 5)
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'support');
+}
+
+/**
+ * Sets variables for support
+ */
+function lulzbot_support_set_variables() {
+  variable_set('node_submitted_support', FALSE);
+}
+
+/**
+ * Creates support landing page beans.
+ */
+function lulzbot_support_create_beans() {
+
+  stools_create_general_beans(
+    array(
+      'support_contact_info' => array(
+        'label' => 'Support Contact',
+        'title' => 'Contact Customer Service',
+      ),
+      'support_learn' => array(
+        'label' => 'Support Learn With the Community',
+        'title' => 'Learn With the Community',
+      ),
+    ),
+    'lulzbot_support'
+  );
+}
+
+/**
+ * Creates support landing page context.
+ */
+function lulzbot_support_create_context() {
+  // Support Page
+  CINC::init('Context')->machine_name('support')
+    ->set('tag', 'page')
+    ->add_path_condition(array('support'))
+    ->add_block_reaction('views', 'support-support_block', 'content', 1)
+    ->add_block_reaction('bean', 'support_contact_info', 'sidebar_first', 1)
+    ->add_block_reaction('bean', 'support_learn', 'sidebar_first', 2)
+    ->create_or_update();
+}

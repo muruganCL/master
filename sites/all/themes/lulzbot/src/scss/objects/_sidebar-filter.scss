@@ -1,0 +1,56 @@
+//
+// Sidebar filter
+//
+
+.sidebar-filter {
+  margin-top: vrem(10);
+  padding: vrem(4);
+  background-color: $gray-lightest;
+  z-index: 1;
+  @include bp(large) {
+    @include span(5 at 1);
+    margin-top: 0;
+  }
+
+  .views-exposed-widget {
+    width: 100%;
+    float: none;
+
+    label {
+      @include font-size(body--tiny);
+    }
+    + .views-exposed-widget {
+      margin-right: 0;
+      margin-top: vrem(4);
+      // padding-bottom: vrem(5);
+      width: 100%;
+      // @include rule(bottom);
+    }
+    &:first-child {
+      margin-top: 0;
+    }
+    &.views-submit-button {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    &:nth-last-child(-n+3) {
+      border-bottom: 0;
+    }
+
+    &.views-widget-sort-sort_bef_combine {
+      width: 100%;
+      float: none;
+    }
+  }
+  select {
+    min-height: 0;
+    font-family: $ff-lato-regular;
+    @include font-size(body--tiny);
+  }
+
+  #edit-mefibs-form-filters-sort-bef-combine-wrapper,
+  .views-widget-sort-sort_bef_combine,
+  .views-widget-filter-keys {
+    // display: none;
+  }
+}

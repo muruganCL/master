@@ -1,0 +1,7 @@
+<?php
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_signifyd_uninstall() {
+  variable_del('commerce_signifyd_debug_only');
+}

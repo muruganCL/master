@@ -1,0 +1,74 @@
+//
+// @file
+// Heading and title styles.
+// ----------------------------------------------------------------------------
+
+@mixin heading--subsection {
+  @include font-size(heading--large);
+  margin-top: 0;
+  margin-bottom: vrem(5);
+}
+
+@mixin heading--large {
+  margin-bottom: vrem(4);
+  font-family: $ff-lato-bold;
+  @include font-size(heading--large);
+}
+
+@mixin heading--thin {
+  font-family: $ff-lato-light;
+  @include font-size(heading--thin);
+  color: $gray-darker;
+  font-weight: $fw-light;
+}
+
+@mixin heading--section {
+  text-transform: uppercase;
+  text-align: center;
+  font-family: $ff-lato-regular;
+  font-weight: $fw-regular;
+  @include font-size(heading--section);
+  color: $gray-black;
+}
+
+@mixin product--title {
+  margin-bottom: vrem(6);
+  padding-bottom: vrem(1);
+  font-family: $ff-lato-black;
+  font-weight: $fw-bold;
+  @include font-size(heading--large);
+  color: $gray-black;
+  border-bottom: 1px solid $clr-border;
+
+  .node-printer & {
+    @include font-size(heading--large);
+  }
+}
+
+@mixin product-teaser--title {
+  @include font-size(heading--micro);
+  border-bottom: 0;
+  margin-top: vrem(4);
+  padding-bottom: vrem(.5);
+  color: $gray-black;
+}
+
+@mixin heading--bold {
+  font-family: $ff-lato-bold;
+}
+
+@mixin heading--small {
+  @include font-size(heading--small);
+}
+
+@mixin heading--tiny {
+  margin-bottom: vrem(1);
+  @include font-size(heading--tiny);
+}
+
+@mixin header--store-category {
+  @include rule(bottom);
+  padding-bottom: vrem(1);
+  font-family: $ff-lato-regular;
+  @include font-size(heading--large);
+}

@@ -1,0 +1,32 @@
+//
+// Support
+//
+
+.support--primary {
+  @include bp(large) {
+    @include span(5 at 1 of 13);
+  }
+}
+
+.support--secondary {
+  @include bp(large) {
+    @include span(8 at 6 of 13);
+  }
+}
+
+.support--description {
+  margin-top: vrem(1);
+}
+
+.support--type {
+  @include promo-type;
+  // margin-top: vrem(1);
+}
+
+.support--teaser {
+  margin-top: vrem(8);
+}
+
+.support--links {
+  margin-top: vrem(4);
+}

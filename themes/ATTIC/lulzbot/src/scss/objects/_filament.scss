@@ -1,0 +1,56 @@
+//
+// Filament
+//
+
+.supplier {
+  // font-style: italic;
+  font-family: $ff-lato-light;
+  font-weight: $fw-light;
+  a {
+    color: $gray-black;
+    transition: color .3s ease-in-out;
+    &:hover {
+      color: $gray-light;
+    }
+  }
+}
+
+.compatibility {
+  margin-top: vrem(4);
+  a {
+    font-family: $ff-titillium-semibold;
+    color: $gray;
+    transition: all .3s ease-in-out;
+
+    &:hover {
+      color: $gray-black;
+    }
+  }
+}
+
+.filament-width-weight {
+  padding-bottom: vrem(1.5);
+  font-family: $ff-titillium-semibold;
+  font-weight: $fw-semibold;
+  @include font-size(body--small);
+  color: $gray-black;
+}
+
+.ease-of-use {
+  color: $gray-black;
+}
+
+.title-rule {
+  height: 1px;
+  width: 100%;
+  margin-bottom: vrem(6);
+  background-color: $clr-border;
+}
+
+.node-filament {
+  .product--title.product--title-width-weight {
+    border-bottom: 0;
+    margin-bottom: vrem(1);
+    padding-bottom: 0;
+  }
+}

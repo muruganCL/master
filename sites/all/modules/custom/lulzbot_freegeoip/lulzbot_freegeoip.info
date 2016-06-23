@@ -1,0 +1,3 @@
+name = LulzBot GeoIP
+description = Sets GeoIP based location cookies
+core = 7.x

@@ -1,0 +1,346 @@
+<?php
+
+/**
+ * @file
+ * Modifies the commerce user experience.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Hides and renames some standard user page tabs.
+ */
+function lulzbot_store_ui_menu_alter(&$items) {
+  // Reorder the user page tabs
+  $items['user/%user/view']['weight'] = 0;
+  $items['user/%user/orders/%commerce_order']['weight'] = 1;
+  $items['user/%user/addressbook']['weight'] = 2;
+  $items['user/%user/edit']['weight'] = 3;
+
+  // Change user edit tab title
+  $items['user/%user/edit']['title'] = t('Edit Account Information');
+
+  // Add a custom access callback to the orders view page
+  $items['user/%user/view']['access callback'] = 'lulzbot_store_ui_user_view_access';
+  $items['user/%user/view']['access arguments'] = array(1);
+
+  $items['user/%user/view']['type'] = MENU_LOCAL_TASK;
+
+  // hide the addressbook page
+  $items['user/%user/addressbook']['access callback'] = FALSE;
+
+  //$items['user/%user/orders/%commerce_order']['type'] = MENU_LOCAL_TASK;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function lulzbot_store_ui_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'lulzbot_store_ui') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_permissions().
+ *
+ * Defines custom permissions for viewing one's own user view page.
+ */
+function lulzbot_store_ui_permission() {
+  return array(
+    'view own user profile' => array(
+      'title' => t('View own user page'),
+      'description' => t('Allows a user to see the \'View\' tab on their user page.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_token_info_alter().
+ */
+function lulzbot_store_ui_token_info_alter(&$data) {
+  $data['tokens']['commerce-order']['owner-login-link'] = array(
+    'name' => 'Login Link for Order Owner',
+    'description' => t('Provides a login link or appropriate text.'),
+    'needs-data' => 'commerce_order',
+  );
+
+  $data['tokens']['commerce-order']['shipping-address'] = array(
+    'name' => 'Shipping Address',
+    'description' => t('Shipping address of the order.'),
+    'needs-data' => 'commerce_order',
+  );
+
+  $data['tokens']['commerce-order']['order-items'] = array(
+    'name' => 'List of items ordered',
+    'description' => t('A bulleted list of ordered items'),
+    'needs-data' => 'commerce_order',
+  );
+}
+
+/**
+ * Implements hook_tokens().
+ */
+function lulzbot_store_ui_tokens($type, $tokens, $data) {
+  $replacements = array();
+
+  switch ($type) {
+  case 'commerce-order':
+    $order = $data['commerce-order'];
+
+    foreach ($tokens as $name => $token) {
+      switch ($name) {
+      case 'owner-login-link':
+        $owner = user_load($order->uid);
+        $link_text = lulzbot_store_ui_commerce_order_owner_login_link($order, $owner);
+        $replacements[$token] = $link_text;
+        break;
+      case 'shipping-address':
+        $address = lulzbot_store_ui_commerce_order_shipping_address($order);
+        $replacements[$token] = $address;
+        break;
+      case 'order-items':
+        $items = lulzbot_store_ui_commerce_order_order_items($order);
+        $replacements[$token] = $items;
+        break;
+      }
+    }
+
+    break;
+  }
+
+  return $replacements;
+}
+
+/**
+ * Custom access callback for user/%user menu item
+ */
+function lulzbot_store_ui_user_view_access($account) {
+  global $user;
+
+  if ($user->uid == 1) {
+    return TRUE;
+  }
+
+  if (user_access('view own user profile')) {
+    return ($user->uid == $account->uid);
+  }
+  else {
+    return ($user->uid != $account->uid && user_view_access($account));
+  }
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ *
+ * Provides extra fields on commerce_orders.
+ */
+function lulzbot_store_ui_field_extra_fields() {
+  // Build out an array of our new extra fields.
+  $commerce_order_field = array(
+    'entity_type' => 'commerce_order',
+    'bundle' => 'commerce_order',
+    'prefix' => t('Commerce Order'),
+  );
+
+  $extra_fields = array(
+    array_merge($commerce_order_field, array(
+      'field_name' => 'tracking_numbers',
+      'label' => t('Tracking Numbers'),
+      'description' => t('A list of linked shipment tracking numbers'),
+    )),
+  );
+
+  // For all of the fields declared above, build them out.
+  $extra_fields = _lulzbot_store_ui_build_extra_fields($extra_fields);
+  // Hide newly created extra fields.
+  $extra_fields = _lulzbot_store_ui_hide_new_fields($extra_fields);
+  // Turn our list of extra fields into a nested array expected by Drupal.
+  $extra_fields = _lulzbot_store_ui_format_extra_fields($extra_fields);
+
+  return $extra_fields;
+}
+
+/**
+ * Utility function to build out the extra_field arrays on all our fields.
+ */
+function _lulzbot_store_ui_build_extra_fields($extra_fields) {
+  // Add an extra_field definition array to every wanted extra_field.
+  return array_map('_lulzbot_store_ui_build_extra_field', $extra_fields);
+}
+
+/**
+ * Utility function to convert our flat array into a nested one for Drupal.
+ *
+ * We didn't nest it to avoid creating complex loops and instead make composable
+ * functions.
+ */
+function _lulzbot_store_ui_format_extra_fields($extra_fields) {
+  // Convert our flat array into an nested array as expected by Drupal.
+  $drupal_extra_fields = array_reduce($extra_fields, function($last, $extra_field) {
+    $entity_type = $extra_field['entity_type'];
+    $bundle = $extra_field['bundle'];
+    $field_name = $extra_field['field_name'];
+    $definition = $extra_field['extra_field'];
+
+    $last[$entity_type][$bundle]['display'][$field_name] = $definition;
+
+    return $last;
+  }, array());
+
+  return $drupal_extra_fields;
+}
+
+/**
+ * Utility function to build an extra field definition.
+ */
+function _lulzbot_store_ui_build_extra_field($field) {
+  $module_path = drupal_get_path('module', 'lulzbot_store_ui');
+  // Build out the required info for a Drupal extra field.
+  $definition = array(
+    'label' => sprintf("%s: %s", $field['prefix'], $field['label']),
+    'description' => $field['description'],
+    'weight' => 100,
+    'field_name' => $field['field_name'],
+    'module' => 'lulzbot_store_ui',
+    'callback' => sprintf("lulzbot_store_ui_extra_field_%s_callback", $field['field_name']),
+    'file' => $module_path . '/lulzbot_store_ui.extra_field_callbacks.inc',
+  );
+
+  // Set this definition on the field.
+  $field['extra_field'] = $definition;
+
+  return $field;
+}
+
+/**
+ * Utility function to hide any newly created extra_fields.
+ */
+function _lulzbot_store_ui_hide_new_fields($extra_fields) {
+  array_walk($extra_fields, function ($extra_field) {
+    _lulzbot_store_ui_hide_new_field(
+      $extra_field['entity_type'],
+      $extra_field['bundle'],
+      $extra_field['field_name']
+    );
+  });
+
+  return $extra_fields;
+}
+
+/**
+ * Utility function to hide any newly created extra_fields.
+ */
+function _lulzbot_store_ui_hide_new_field($entity_type, $bundle, $field_name) {
+  $settings = field_bundle_settings($entity_type, $bundle);
+  $settings_updated = FALSE;
+
+  $entity_info = entity_get_info($entity_type, $bundle);
+  $view_modes = array_keys($entity_info['view modes']);
+  if (!in_array('default', $view_modes)) $view_modes[] = 'default';
+  foreach ($view_modes as $view_mode) {
+    if (!isset($settings['extra_fields']['display'][$field_name][$view_mode])) {
+      $settings_updated = TRUE;
+      $settings['extra_fields']['display'][$field_name][$view_mode] = array(
+        'weight' => 100,
+        'visible' => FALSE,
+      );
+    }
+  }
+
+  if ($settings_updated) {
+    field_bundle_settings($entity_type, $bundle, $settings);
+  }
+}
+
+/**
+ * Implements hook_rules_action_info_alter().
+ */
+function lulzbot_store_ui_rules_action_info_alter(&$actions) {
+  $actions['commerce_cart_add_to_cart_message']['callbacks']['execute'] = 'lulzbot_store_ui_rules_add_to_cart_message';
+}
+
+/**
+ * CUSTOM Rules action: displays a the default translatable Add to Cart message.
+ */
+function lulzbot_store_ui_rules_add_to_cart_message($product) {
+  $add_tpl = '%title added to <a href="!cart-url">your cart</a>.';
+  $add_replacements = array(
+    '%title' => $product->title,
+    '!cart-url' => url('cart'),
+  );
+  $add_msg = t($add_tpl, $add_replacements);
+
+  drupal_set_message($add_msg, 'status add-to-cart');
+}
+
+/**
+ * Generate appropriate link text for a one-time login link.
+ */
+function lulzbot_store_ui_commerce_order_order_items($order) {
+  $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+  $line_items = $commerce_order->commerce_line_items->value();
+
+  $items = array_filter($line_items, function ($item) {
+    return $item->type == 'product';
+  });
+
+  $items = array_map(function ($item) {
+    $item = entity_metadata_wrapper('commerce_line_item', $item);
+    return $item->commerce_product->title->value();
+  }, $items);
+
+  $bullets = array_map(function ($item) {
+    return "- " . $item;
+  }, $items);
+
+  $token = implode("\r", $bullets);
+
+  return $token;
+}
+
+/**
+ * Generate a bulleted list of order items.
+ */
+function lulzbot_store_ui_commerce_order_shipping_address($order) {
+  $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+  $shipping_id = $commerce_order->commerce_customer_shipping->raw();
+  $shipping = entity_load('commerce_customer_profile', array($shipping_id));
+
+  $field_display = array(
+    'label' => 'hidden',
+  );
+
+  $address = field_view_field(
+    'commerce_customer_profile',
+    $shipping[$shipping_id],
+    'commerce_customer_address',
+    $field_display
+  );
+
+  unset($address[0]['country']);
+
+  $markup = drupal_render($address);
+
+  return $markup;
+}
+
+/**
+ * Generate a bulleted list of order items.
+ */
+function lulzbot_store_ui_commerce_order_owner_login_link($order, $owner) {
+  if ($order->mail == $owner->mail) {
+    $link_text = format_string(
+      "You can view your order history with this one-time login link:\r\r!reset-link",
+      array(
+        "!reset-link" => user_pass_reset_url($owner),
+      )
+    );
+  }
+  else {
+    $link_text = t('We have created an account for this order on LulzBot.com. Please check your email for an account confirmation. You may use that email to log in and review your order online.');
+  }
+
+  return $link_text;
+}

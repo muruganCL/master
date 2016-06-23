@@ -1,0 +1,49 @@
+//
+// Aside
+//
+
+.aside {
+  margin-top: vrem(9);
+  padding-top: vrem(8);
+  padding-bottom: vrem(6);
+  @include rule(top);
+  @include font-size(body--small);
+
+  .sidebar-before-content & {
+    padding-top: 0;
+    margin-top: 0;
+    margin-bottom: vrem(9);
+    padding-bottom: vrem(8);
+    border-top: 0;
+    @include rule(bottom);
+  }
+
+  @include bp(large) {
+    position: relative;
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 0;
+    padding-left: vrem(6);
+
+    .sidebar-before-content & {
+      border-bottom: 0;
+    }
+
+    &:before {
+      content: '';
+      position: absolute;
+      top: 6px;
+      bottom: 0;
+      left: 0;
+      width: 1px;
+      height: 100%;
+      background-color: $clr-border;
+    }
+  }
+
+  .block {
+    + .block {
+      margin-top: vrem(8);
+    }
+  }
+}

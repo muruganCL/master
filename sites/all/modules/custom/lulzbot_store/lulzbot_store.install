@@ -1,0 +1,839 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_store_enable() {
+  lulzbot_store_create_bean_types();
+  lulzbot_store_create_beans();
+  lulzbot_store_create_contexts();
+  lulzbot_store_create_roles_and_permissions();
+  lulzbot_store_set_view_mode();
+
+  variable_set('commerce_product_urls_url_key', 'sku');
+  variable_set('lulzbot_store_post_signifyd_status', 'processing_payment');
+  if (!variable_get('lulzbot_store_free_countries')) {
+    variable_set('lulzbot_store_free_countries', 'US,CA,GB');
+  }
+
+  $rules_config = rules_config_load('rules_shipwire_commerce_fullfill_order');
+  $rules_config->active = FALSE;
+  $rules_config->save();
+
+  // transfer the price from the old US specific price to the new variable.
+  if ($price = variable_get('lulzbot_store_free_shipping_price_us')) {
+    variable_set('lulzbot_store_free_shipping_price', $price);
+    variable_del('lulzbot_store_free_shipping_price_us');
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function lulzbot_store_uninstall() {
+  lulzbot_store_delete_contexts();
+  variable_del('lulzbot_store_force_duplicate_orders');
+  variable_del('lulzbot_store_can_split_orders');
+  variable_del('lulzbot_store_debug_signifyd_webhook');
+  variable_del('lulzbot_store_free_shipping_price');
+}
+
+/**
+ * Creates store bean types.
+ */
+function lulzbot_store_create_bean_types() {
+  // Store category bean type
+  CINC::init('BeanType')->machine_name('store_category')->read()
+    ->set('label', 'Store Category')
+    ->create_or_update()
+    ->allow_view_access(array('anonymous user', 'authenticated user', 'administrator'));
+
+  // Add fields
+  CINC::init('LongTextField')->machine_name('field_store_category_promo_text')->read()
+    ->create_or_update()
+    ->set_instance('label', 'Promotional Text')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.rows', 7)
+    ->set_instance('widget.weight', 0)
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('bean', 'store_category');
+  CINC::init('LinkField')->machine_name('field_store_category_link')->read()
+    ->create_or_update()
+    ->set_instance('label', 'Promotional Content Link')
+    ->set_instance('description', 'For the title, enter the text you would like the button to display. In most cases the URL should be a relative path to an internal page such as <em>printers</em>.')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->set_instance('widget.weight', 2)
+    ->create_or_update_instance_for('bean', 'store_category');
+  CINC::init('EntityReferenceField')->machine_name('field_store_category_products')->read()
+    ->set('settings.handler_settings.target_bundles', array(
+      'filament' => 'filament',
+      'merchandise' => 'merchandise',
+      'part' => 'part',
+      'printer' => 'printer',
+      'tool_head' => 'tool_head',
+    ))
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Featured Products')
+    ->set_instance('display.default.type', 'entityreference_entity_view')
+    ->set_instance('display.default.settings.view_mode', 'teaser')
+    ->set_instance('widget.weight', 5)
+    ->create_or_update_instance_for('bean', 'store_category');
+
+  // printer bean type
+  // used for showing printers on the printer page.
+  CINC::init('BeanType')->machine_name('printer_display')->read()
+    ->set('label', 'Printer Display')
+    ->create_or_update();
+
+  // Product node reference
+  CINC::init('EntityReferenceField')
+    ->machine_name('field_printer_display_mini')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'printer' => 'printer',
+        ),
+      )
+    )
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Mini Printer')
+    ->set_instance('description', 'Select the mini product display')
+    ->set_instance('display.default.type', 'entityreference_entity_view')
+    ->set_instance('display.default.settings.view_mode', 'compare')
+    ->set_instance('display.teaser.type', 'entityreference_entity_view')
+    ->set_instance('display.teaser.settings.view_mode', 'compare')
+    ->set_instance('widget.weight', 0)
+    ->create_or_update_instance_for('bean', 'printer_display');
+
+  // Product node reference
+  CINC::init('EntityReferenceField')
+    ->machine_name('field_printer_display_taz')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'printer' => 'printer',
+        ),
+      )
+    )
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'TAZ Printer')
+    ->set_instance('description', 'Select the taz product display')
+    ->set_instance('display.default.type', 'entityreference_entity_view')
+    ->set_instance('display.default.settings.view_mode', 'compare')
+    ->set_instance('display.teaser.type', 'entityreference_entity_view')
+    ->set_instance('display.teaser.settings.view_mode', 'compare')
+    ->set_instance('widget.weight', 1)
+    ->create_or_update_instance_for('bean', 'printer_display');
+
+  // description field
+  CINC::init('LongTextField')
+    ->machine_name('field_printer_display_desc_mini')
+    ->create_or_update()
+    ->set_instance('label', 'Mini Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 2)
+    ->create_or_update_instance_for('bean', 'printer_display');
+
+  // description field
+  CINC::init('LongTextField')
+    ->machine_name('field_printer_display_desc_taz')
+    ->create_or_update()
+    ->set_instance('label', 'Taz Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 3)
+    ->create_or_update_instance_for('bean', 'printer_display');
+
+  // create specifications
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_printer_display_specs')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Specifications')
+    ->set_instance('display.default.settings.edit', '')
+    ->set_instance('display.default.settings.delete', '')
+    ->set_instance('display.default.settings.add', '')
+    ->set_instance('display.default.settings.description', 0)
+    ->set_instance('widget.weight', 4)
+    ->create_or_update_instance_for('bean', 'printer_display');
+
+  CINC::init('TextField')
+    ->machine_name('field_specs_title')
+    ->create_or_update()
+    ->set_instance('label', 'Title')
+    ->set_instance('weight', 0)
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_display_specs');
+
+  CINC::init('TextField')
+    ->machine_name('field_specs_mini_value')
+    ->create_or_update()
+    ->set_instance('label', 'Mini Value')
+    ->set_instance('description', 'Set specification value. The value Yes will be converted to a checkmark.')
+    ->set_instance('weight', 10)
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_display_specs');
+
+  CINC::init('TextField')
+    ->machine_name('field_specs_taz_value')
+    ->create_or_update()
+    ->set_instance('label', 'Taz Value')
+    ->set_instance('description', 'Set specification value. The value Yes will be converted to a checkmark.')
+    ->set_instance('weight', 20)
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_display_specs');
+}
+
+/**
+ * Add custom fields to commerce_order type.
+ */
+function lulzbot_store_commerce_order_fields() {
+  CINC::init('BooleanField')
+    ->machine_name('field_order_is_reconciled')
+    ->create_or_update()
+    ->set_instance('label', 'Reconciled in Odoo')
+    ->set_instance('description', 'Set this value when an order has been reconciled in Odoo')
+    ->set_instance('weight', 20)
+    ->create_or_update_instance_for('commerce_order', 'commerce_order', 'field_order_is_reconciled');
+}
+
+/**
+ * Creates Beans for store page and intro text for product landing pages.
+ */
+function lulzbot_store_create_beans() {
+  $categories = array(
+    'printers' => array(
+      'label' => 'Printers Store Promo Content',
+      'title' => 'Printers',
+    ),
+    'filament' => array(
+      'label' => 'Filament Store Promo Content',
+      'title' => 'Filament',
+    ),
+    'tool_heads' => array(
+      'label' => 'Tool Heads Store Promo Content',
+      'title' => 'Tool Heads',
+    ),
+    'parts' => array(
+      'label' => 'Parts Store Promo Content',
+      'title' => 'Parts',
+    ),
+    'merchandise' => array(
+      'label' => 'Merchandise Store Promo Content',
+      'title' => 'Merchandise',
+    ),
+    'printers_heading' => array(
+      'label' => 'Printers Store Promo Content',
+      'title' => 'Printers',
+    ),
+    'store' => array(
+      'label' => 'Main Store Promo Content',
+      'title' => '',
+    ),
+  );
+
+  foreach ($categories as $category => $category_details) {
+    CINC::init('Bean')->machine_name($category)
+      ->set('type', 'store_category')
+      ->set('label', $category_details['label'])
+      ->set('title', $category_details['title'])
+      ->create_or_update();
+
+    CINC::init('Bean')->machine_name($category . '_intro_text')
+      ->set('type', 'general')
+      ->set('label', $category_details['label'] . ' Intro Text')
+      ->create_or_update();
+  }
+
+  // create a printer display bean
+  CINC::init('Bean')->machine_name('printers')
+    ->set('type', 'printer_display')
+    ->set('label', 'Printers')
+    ->create_or_update();
+}
+
+/**
+ * Creates store contexts.
+ */
+function lulzbot_store_create_contexts() {
+  // Store Page
+  CINC::init('Context')->machine_name('store')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store'))
+    ->add_block_reaction('bean', 'store_intro_text', 'above_content', 1)
+    ->add_block_reaction('bean', 'printers_heading', 'content', 1)
+    ->add_block_reaction('bean', 'printers', 'content', 2)
+    ->add_block_reaction('bean', 'filament', 'content', 3)
+    ->add_block_reaction('bean', 'tool_heads', 'content', 4)
+    ->add_block_reaction('bean', 'parts', 'content', 5)
+    ->add_block_reaction('bean', 'merchandise', 'content', 6)
+    ->create_or_update();
+
+  // Filament Landing Page
+  CINC::init('Context')->machine_name('filament')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store/filament'))
+    ->add_block_reaction('bean', 'filament_intro_text', 'above_content', 1)
+    ->add_block_reaction('views', '-exp-filament-fila_block', 'content', 1)
+    ->add_block_reaction('views', 'filament-fila_block', 'content', 2)
+    ->create_or_update();
+
+  // Merchandise Page
+  CINC::init('Context')
+    ->machine_name('merchandise')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store/merchandise'))
+    ->add_block_reaction('bean', 'merchandise_intro_text', 'above_content', 1)
+    ->add_block_reaction('views', '-exp-merchandise-merch_block', 'content', 1)
+    ->add_block_reaction('views', 'merchandise-merch_block', 'content', 2)
+    ->create_or_update();
+
+  // Parts Landing Page
+  CINC::init('Context')->machine_name('parts')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store/parts'))
+    ->add_block_reaction('bean', 'parts_intro_text', 'above_content', 1)
+    ->add_block_reaction('views', '-exp-parts-parts_block', 'content', 1)
+    ->add_block_reaction('views', 'parts-parts_block', 'content', 2)
+    ->create_or_update();
+
+  // Printers Landing Page
+  CINC::init('Context')->machine_name('printers')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store/printers'))
+    ->add_block_reaction('bean', 'printers', 'content', 1)
+    ->create_or_update();
+
+  // Tool Heads Landing Page
+  CINC::init('Context')->machine_name('tool_heads')
+    ->set('tag', 'page')
+    ->add_path_condition(array('store/tool-heads'))
+    ->add_block_reaction('bean', 'tool_heads_intro_text', 'above_content', 1)
+    ->add_block_reaction('views', '-exp-tool_heads-th_block', 'content', 1)
+    ->add_block_reaction('views', 'tool_heads-th_block', 'content', 2)
+    ->create_or_update();
+}
+
+/**
+ * Implements hook_schema().
+ */
+function lulzbot_store_schema() {
+  $schema = array();
+  $schema['cache_store'] = drupal_get_schema_unprocessed('system', 'cache');
+
+  $schema['lulzbot_store_countries'] = array(
+    'fields' => array(
+      'country_code' => array(
+        'type' => 'varchar',
+        'length' => 4,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'hidden' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'warehouses' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('country_code'),
+    'indexes' => array(
+      'hidden' => array('hidden'),
+    ),
+  );
+
+  $schema['lulzbot_store_notify'] = array(
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'sku' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'sent' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'requested' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'notified' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'country' => array(
+        'type' => 'varchar',
+        'length' => 2,
+        'not null' => TRUE,
+        'default' => 'US',
+      ),
+    ),
+    'primary key' => array('id'),
+    'index' => array(
+      'email_sent' => array('email', 'sent'),
+    ),
+  );
+
+  $schema['lulzbot_store_shipwire_orders'] = array(
+    'fields' => array(
+      'commerce_order_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'shipwire_order_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'on_hold' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'shipped' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'delivered' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      //'last_response' => array(
+      //  'type' => 'text',
+      //  'size' => 'medium',
+      //  'not null' => TRUE,
+      //),
+      'release_hold' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'processing_release' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('commerce_order_id', 'shipwire_order_id'),
+    'index' => array(
+      'on_hold' => array('on_hold'),
+      'shipped' => array('shipped'),
+      'release_hold' => array('release_hold'),
+    ),
+  );
+
+  $schema['lulzbot_store_signifyd'] = array(
+    'fields' => array(
+      'order_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'response' => array(
+        'type' => 'text',
+        'size' => 'medium',
+        'not null' => TRUE,
+      ),
+      'updated' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('order_id'),
+  );
+
+  $schema['lulzbot_store_data'] = array(
+    'fields' => array(
+      'order_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('order_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Creates about roles and permissions.
+ */
+function lulzbot_store_create_roles_and_permissions() {
+
+  // Enable default permissions for system roles.
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array(
+    'view any printer_display bean',
+  ));
+
+}
+
+/**
+ * Sets view mode enabled
+ */
+function lulzbot_store_set_view_mode() {
+  $settings = field_bundle_settings('bean', 'printer_display');
+  $settings['view_modes']['teaser']['custom_settings'] = TRUE;
+  field_bundle_settings('bean', 'printer_display', $settings);
+}
+
+/**
+ * Implements hook_update_N().
+ *
+ * Add the custom cache table for the store.
+ */
+function lulzbot_store_update_7000() {
+  db_create_table('cache_store', drupal_get_schema_unprocessed('lulzbot_store', 'cache_store'));
+}
+
+/**
+ * Add the countries table.
+ */
+function lulzbot_store_update_7001() {
+  db_create_table('lulzbot_store_countries', drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_countries'));
+}
+
+/**
+ * Add the notification table.
+ */
+function lulzbot_store_update_7002() {
+  db_create_table('lulzbot_store_notify', drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_notify'));
+}
+
+/**
+ * Add the shipwire order table.
+ */
+function lulzbot_store_update_7003() {
+  db_create_table('lulzbot_store_shipwire_orders', drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_shipwire_orders'));
+}
+
+/**
+ * Add last_response column to the lulzbot_store_shipwire_orders table.
+ */
+function lulzbot_store_update_7004() {
+  $schema = drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_shipwire_orders');
+  db_add_field('lulzbot_store_shipwire_orders', 'last_response', $schema['fields']['last_response']);
+}
+
+/**
+ * Add delivered column to the lulzbot_store_shipwire_orders table.
+ */
+function lulzbot_store_update_7005() {
+  $schema = drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_shipwire_orders');
+  db_add_field('lulzbot_store_shipwire_orders', 'delivered', $schema['fields']['delivered']);
+}
+
+/**
+ * Add lulzbot_store_signifyd.
+ */
+function lulzbot_store_update_7006() {
+  db_create_table('lulzbot_store_signifyd', drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_signifyd'));
+}
+
+/**
+ * Add release_hold to the shipwire orders table.
+ */
+function lulzbot_store_update_7007() {
+  $schema = drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_shipwire_orders');
+  db_add_field('lulzbot_store_shipwire_orders', 'release_hold', $schema['fields']['release_hold']);
+  db_add_field('lulzbot_store_shipwire_orders', 'processing_release', $schema['fields']['processing_release']);
+}
+
+/**
+ * Add the notify country field.
+ */
+function lulzbot_store_update_7008() {
+  $schema = drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_notify');
+  db_add_field('lulzbot_store_notify', 'country', $schema['fields']['country']);
+}
+
+/**
+ * Add the data table.
+ */
+function lulzbot_store_update_7009() {
+  db_create_table('lulzbot_store_data', drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_data'));
+}
+
+/**
+ * Add the timestamp field.
+ */
+function lulzbot_store_update_7010() {
+  if (!db_field_exists('lulzbot_store_data', 'timestamp')) {
+    $schema = drupal_get_schema_unprocessed('lulzbot_store', 'lulzbot_store_data');
+    db_add_field('lulzbot_store_data', 'timestamp', $schema['fields']['timestamp']);
+  }
+}
+
+/**
+ * Drop the last_response field.
+ */
+function lulzbot_store_update_7011() {
+  if (db_field_exists('lulzbot_store_shipwire_orders', 'last_response')) {
+    db_drop_field('lulzbot_store_shipwire_orders', 'last_response');
+  }
+}
+
+/**
+ * Manually process missed signifyd orders.
+ */
+function lulzbot_store_update_7012() {
+  // Let's load everything, just in case
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+  drupal_load('module', 'lulzbot_store');
+  drupal_load('module', 'commerce_signifyd');
+  drupal_load('module', 'commerce_checkout');
+  module_load_include('inc', 'lulzbot_store', 'lulzbot_store.rules');
+  module_load_include('inc', 'commerce_signifyd', 'commerce_signifyd.rules');
+
+  // Load all the affected orders
+  $orders = commerce_order_load_multiple(array(
+    101910,
+    101781,
+    101902,
+    101901,
+    101898,
+    101834,
+    101882,
+    101879,
+    101870,
+    101880,
+    101877,
+    101514,
+    101876,
+    101871,
+    101829,
+    101863,
+    101859,
+    101853,
+    101851,
+    101397,
+  ), array(), TRUE);
+
+  // Build an array of the approriate rule actions to call
+  $get_actions = function ($item) {
+    $location = (lulzbot_store_condition_order_is_us($item)) ? 'us' : 'intl';
+    $actions = array(
+      "lulzbot_store_action_place_{$location}_shipwire_orders",
+      'commerce_signifyd_action_submit_case',
+    );
+    return array(
+      'order' => $item,
+      'actions' => $actions,
+    );
+  };
+
+  // Execute each of the actions defined above
+  $execute_actions = function ($item) {
+    while (!empty($item['actions'])) {
+      $action = array_shift($item['actions']);
+      try {
+        if (function_exists($action)) {
+          $action($item['order']);
+        }
+        else {
+          throw new Exception("Function not found: {$action}");
+        }
+      }
+      catch (Exception $e) {
+        $item['errors'][] = array(
+          'action' => $action,
+          'error'  => $e->getMessage(),
+          'exception'  => $e,
+        );
+
+        break;
+      }
+    }
+
+    return $item;
+  };
+
+  // Log any errors that came up while processing the actions
+  $log_errors = function ($item) {
+    if (!empty($item['errors'])) {
+      watchdog(
+        'lulzbot_store',
+        var_export($item['errors'], TRUE),
+        array(),
+        WATCHDOG_ERROR
+      );
+    }
+
+    return $item;
+  };
+
+  // Pipes an array through a series of array_maps, takes ($input [, $operations... ])
+  $pipeline = function ($input) {
+    $operations = array_slice(func_get_args(), 1);
+    foreach ($operations as $op) {
+      $input = array_map($op, $input);
+    }
+    return $input;
+  };
+
+  // Remove any canceled orders
+  $uncancelled = array_filter($orders, function ($order) {
+    return ($order->status != 'canceled');
+  });
+
+  // Run our orders through our pipeline
+  $pipeline($uncancelled, $get_actions, $execute_actions, $log_errors);
+}
+
+/**
+ * Manually process missed shipwire orders.
+ */
+function lulzbot_store_update_7013() {
+  // Let's load everything, just in case
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+  drupal_load('module', 'lulzbot_store');
+  drupal_load('module', 'shipwire_api');
+  drupal_load('module', 'commerce_checkout');
+  module_load_include('inc', 'lulzbot_store', 'lulzbot_store.rules');
+
+  // Load all the affected orders
+  $orders = commerce_order_load_multiple(array(
+    103105,
+    103098,
+    103094,
+    103099,
+  ), array(), TRUE);
+
+  // Build an array of the approriate rule actions to call
+  $get_actions = function ($item) {
+    $location = (lulzbot_store_condition_order_is_us($item)) ? 'us' : 'intl';
+    $actions = array(
+      "lulzbot_store_action_place_shipwire_order",
+    );
+    return array(
+      'order' => $item,
+      'actions' => $actions,
+    );
+  };
+
+  // Execute each of the actions defined above
+  $execute_actions = function ($item) {
+    while (!empty($item['actions'])) {
+      $action = array_shift($item['actions']);
+      try {
+        if (function_exists($action)) {
+          $action($item['order']);
+        }
+        else {
+          throw new Exception("Function not found: {$action}");
+        }
+      }
+      catch (Exception $e) {
+        $item['errors'][] = array(
+          'action' => $action,
+          'error'  => $e->getMessage(),
+          'exception'  => $e,
+        );
+
+        break;
+      }
+    }
+
+    return $item;
+  };
+
+  // Log any errors that came up while processing the actions
+  $log_errors = function ($item) {
+    if (!empty($item['errors'])) {
+      watchdog(
+        'lulzbot_store',
+        var_export($item['errors'], TRUE),
+        array(),
+        WATCHDOG_ERROR
+      );
+    }
+
+    return $item;
+  };
+
+  // Pipes an array through a series of array_maps, takes ($input [, $operations... ])
+  $pipeline = function ($input) {
+    $operations = array_slice(func_get_args(), 1);
+    foreach ($operations as $op) {
+      $input = array_map($op, $input);
+    }
+    return $input;
+  };
+
+  // Remove any canceled orders
+  $uncancelled = array_filter($orders, function ($order) {
+    return ($order->status != 'canceled');
+  });
+
+  // Run our orders through our pipeline
+  $pipeline($uncancelled, $get_actions, $execute_actions, $log_errors);
+}
+
+/**
+ * Add reconciled field to commerce_order entity.
+ */
+function lulzbot_store_update_7014(&$sandbox) {
+  lulzbot_store_commerce_order_fields();
+}
+
+/**
+ * Deletes Contexts.
+ */
+function lulzbot_store_delete_contexts() {
+  CINC::init('Context')->machine_name('tool_heads')->delete();
+}

@@ -1,0 +1,29 @@
+//
+// Image callout layout
+//
+
+.image-callout {
+
+  #main {
+    padding-top: vrem(10);
+  }
+
+  &.image-visible {
+    #main {
+      padding-top: vrem(36);
+    }
+    #main-content {
+      padding: vrem(10) span(1);
+      background-color: $white;
+    }
+  }
+
+  .callout-header {
+    @include clearfix;
+    .page-title {
+      @include bp(large) {
+        @include span(13 at 1);
+      }
+    }
+  }
+}

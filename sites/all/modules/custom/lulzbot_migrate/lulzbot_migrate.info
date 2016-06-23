@@ -1,0 +1,22 @@
+name = LulzBot Migrate
+description = Migrations for lulzbot.com
+package = Migration
+core = 7.x
+
+dependencies[] = commerce_migrate
+
+files[] = node_announcement.inc
+files[] = node_filament.inc
+files[] = node_merchandise.inc
+files[] = node_page.inc
+files[] = node_part.inc
+files[] = node_printer.inc
+files[] = node_tool_head.inc
+
+files[] = product_filament.inc
+files[] = product_part.inc
+files[] = product_printer.inc
+files[] = product_tool_head.inc
+files[] = product_tshirt.inc
+
+files[] = user_user.inc

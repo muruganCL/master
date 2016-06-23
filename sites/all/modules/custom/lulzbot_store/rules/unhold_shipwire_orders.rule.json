@@ -1,0 +1,26 @@
+{ "rules_unhold_shipwire_orders" : {
+    "LABEL" : "Unhold Shipwire orders",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "lulzbot", "shipwire" ],
+    "REQUIRES" : [ "rules", "lulzbot_store", "entity" ],
+    "ON" : { "commerce_order_update" : [] },
+    "IF" : [
+      { "data_is" : {
+          "data" : [ "commerce-order-unchanged:status" ],
+          "op" : "IN",
+          "value" : { "value" : {
+              "pending_verification" : "pending_verification",
+              "processing_payment" : "processing_payment",
+              "hold_for_review" : "hold_for_review"
+            }
+          }
+        }
+      },
+      { "data_is" : { "data" : [ "commerce-order:status" ], "value" : "processing_shipping" } }
+    ],
+    "DO" : [
+      { "lulzbot_store_unhold_shipwire_orders" : { "commerce_order" : [ "commerce_order" ] } }
+    ]
+  }
+}

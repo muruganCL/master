@@ -1,0 +1,81 @@
+<?php
+module_load_include('inc', 'cinc_display');
+
+/**
+ * Apply the display settings with CINC.
+ *
+ * This will log an error if the view mode is not setup.
+ *
+ * @param CINCDisplay $display
+ *   The display object.
+ */
+function cinc_display_apply_settings(CINCDisplay $display) {
+  // TODO handle other types?
+  $init = 'ContentType';
+
+  // get entity info to check that we can/should add this
+  $info = entity_get_info($display->entityType);
+
+  if (!$info) {
+    $message = 'Cannout save display settings for !display: the entity type does not exist';
+    $variables = array('!display' => $display->__toString());
+    watchdog('cinc_display', $message, $variables, WATCHDOG_ERROR);
+    return;
+  }
+
+  if ($display->viewMode !== 'default' && !in_array($display->viewMode, array_keys($info['view modes']))) {
+    $settings = field_bundle_settings($display->entityType, $display->bundle);
+    $settings['view_modes'][$display->viewMode] = array('custom_settings' => TRUE);
+    field_bundle_settings($display->entityType, $display->bundle, $settings);
+  }
+
+  // get the entity
+  $entity = CINC::init($init)->machine_name($display->bundle)->read();
+  $display_settings = cinc_display_reconcile_display_settings($display, $entity);
+  foreach ($entity->fields as $field) {
+    $this_field = $field->config['field_name'];
+    if (isset($display_settings[$this_field])) {
+      if ($this_field === 'body' && $display->viewMode == 'featured') {
+        // var_dump($display);
+      }
+      $field->set_instance('display.' . $display->viewMode, $display_settings[$this_field])
+        ->update_instance();
+    }
+  }
+
+  // check that the entity has the view mode in its settings and update settings
+  // if necessary
+  $settings = field_bundle_settings($display->entityType, $display->bundle);
+  if (!in_array($display->viewMode, $settings['view_modes'])) {
+    $settings['view_modes'][$display->viewMode] = array('custom_settings' => TRUE);
+    field_bundle_settings($display->entityType, $display->bundle, $settings);
+  }
+}
+
+/**
+ * Implements hook_cinc_display_cinc_yaml_applied().
+ */
+function cinc_display_cinc_yaml_applied() {
+  watchdog('cinc_display', 'Applying CINC Display settings');
+  module_invoke_all('cinc_display_apply');
+}
+
+/**
+ * Reconcile the display settings for this entity.
+ *
+ * By default, the display object will likely only contain visible fields
+ * and settings. We also may need to specifically hide things not mentioned but
+ * attached to the entity.
+ */
+function cinc_display_reconcile_display_settings(CINCDisplay $display, $entity) {
+  $entity->read_fields();
+
+  // loop through the fields and hide those that do not exist in settings
+  foreach ($entity->fields as $field) {
+    if (!isset($display->settings[$field->config['field_name']])) {
+      $display->hide($field->config['field_name']);
+    }
+  }
+
+  return $display->settings;
+}

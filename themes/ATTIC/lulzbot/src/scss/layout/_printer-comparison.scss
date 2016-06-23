@@ -1,0 +1,171 @@
+//
+// Printer comparison page layout
+//
+
+.printer--comparison {
+  position: relative;
+  margin-top: vrem(6);
+  z-index: 0;
+
+  @include bp(large) {
+    margin-top: vrem(-6);
+  }
+}
+
+.compare--primary {
+  @include bp(medium) {
+    @include span(9 at 1);
+    float: initial;
+    vertical-align: bottom;
+    display: table-cell;
+  }
+
+  text-align: center;
+
+  .compare--printer-image {
+    width: 50%;
+    max-width: 340px;
+    margin: 0 auto;
+
+    @include bp(large) {
+      width: 70%;
+    }
+  }
+}
+
+.compare--secondary {
+  margin-top: vrem(8);
+  @include bp(medium) {
+    @include span(9 at 11);
+    float: initial;
+    margin-top: 0;
+    vertical-align: bottom;
+    display: table-cell;
+  }
+  text-align: center;
+
+  .compare--printer-image {
+    @include bp(large) {
+      width: 100%;
+      max-width: 490px;
+      margin-left: vrem(4);
+
+      img {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.compare--spacer {
+  display: table-cell;
+  min-width: 125px;
+
+  @include bp(x-large) {
+    min-width: 300px;
+  }
+}
+
+.compare--description {
+  position: relative;
+  padding-bottom: vrem(26);
+  margin-top: vrem(10);
+  @include font-size(table-cell);
+
+  &:before {
+    content: '';
+    height: vrem(14);
+    width: 1px;
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    margin-left: -.5px;
+    background-color: $clr-border;
+  }
+  &:after {
+    content: '';
+    height: 1px;
+    width: vrem(12);
+    position: absolute;
+    bottom: vrem(14);
+    left: 50%;
+    margin-left: vrem(-6);
+    background-color: $clr-border;
+  }
+}
+
+// Table
+.printer-specs {
+  display: none;
+  @include rule(bottom, $gray-light);
+  @include bp(large) {
+    display: table;
+  }
+  td {
+    width: 38%;
+    padding: vrem(2);
+    @include spec-field;
+
+    @include bp(large) {
+      padding: vrem(8);
+    }
+  }
+  th {
+    display: none;
+    width: 260px;
+    padding: vrem(2);
+    @include spec-label;
+
+    @include bp(large) {
+      display: table-cell;
+      padding: vrem(8);
+    }
+  }
+  thead {
+    display: none;
+  }
+}
+
+.specification--yes {
+  @include img-replace;
+  min-height: 32px;
+  background-position: 50%;
+}
+
+// Mobile table-ish
+.printer-specs-mobile {
+  display: block;
+  text-align: center;
+
+  @include bp(large) {
+    display: none;
+  }
+}
+
+.taz-printer-specs {
+  margin-top: vrem(14);
+}
+
+.comparison--row {
+  display: table;
+  width: 100%;
+  @include rule(top);
+
+  &:last-child {
+    @include rule(bottom);
+  }
+}
+
+.comparison--label {
+  display: table-cell;
+  padding: vrem(4);
+  width: 37%;
+  @include spec-label;
+}
+
+.comparison--specs {
+  display: table-cell;
+  padding: vrem(4);
+  width: 70%;
+  @include spec-field;
+}

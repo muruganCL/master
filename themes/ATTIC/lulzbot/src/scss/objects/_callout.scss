@@ -1,0 +1,41 @@
+//
+// Callout
+//
+
+.callout {
+  position: relative;
+  padding-left: vrem(9);
+  padding-right: vrem(9);
+  padding-top: vrem(12);
+  padding-bottom: vrem(12);
+  background-size: cover;
+  z-index: 0;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: rgba($black, .8);
+    z-index: -1;
+  }
+
+  a {
+    @include font-size(body--small);
+    color: $green;
+  }
+}
+
+.callout-title {
+  @include heading--large;
+  @include font-size(callout-title);
+  padding-bottom: vrem(4);
+  color: $white;
+  border-bottom: 1px solid rgba($white, .3);
+}
+
+.learn-with-community {
+  background-image: url(../img/learn_community.png);
+}

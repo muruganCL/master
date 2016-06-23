@@ -1,0 +1,22 @@
+//
+// Accordion
+//
+
+.accordion {
+  @include list--no-bullets;
+  @include list--ruled(vrem(4), 'above');
+  margin-top: vrem(6);
+}
+
+.accordion-toggle {
+  display: block;
+  @include font-size(accordion-toggle);
+}
+
+.accordion-panel {
+  width: 100%;
+  padding-top: vrem(4);
+  &[aria-expanded="false"] {
+    display: none;
+  }
+}

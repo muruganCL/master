@@ -1,0 +1,41 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_showcase_enable() {
+  lulzbot_showcase_create_content_type();
+}
+
+/**
+ * Create content type and fields.
+ */
+function lulzbot_showcase_create_content_type() {
+  CINC::init('ContentType')
+    ->machine_name('showcase')
+    ->set('title_label', 'Showcase Name')
+    ->set('description', 'A project completed by a LulzBot community member to be featured on a product page.')
+    ->create_or_update();
+
+  CINC::init('ImageField')
+    ->machine_name('field_showcase_image')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Project Image')
+    ->set_instance('required', TRUE)
+    ->set_instance('settings.file_directory', 'showcase')
+    ->create_or_update_instance_for('node', 'showcase');
+
+  CINC::init('EntityReferenceField')
+    ->machine_name('field_showcase_user')
+    ->set('settings.handler_settings', array(
+        'target_type' => 'user',
+        'target_bundles' => array(
+          'user' => 'user',
+        ),
+      )
+    )
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'User')
+    ->create_or_update_instance_for('node', 'showcase');
+}

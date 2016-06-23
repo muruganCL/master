@@ -1,0 +1,78 @@
+//
+// Call to action Bean
+//
+
+.call-to-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 385px;
+  padding-top: vrem(10);
+  padding-bottom: vrem(10);
+  text-align: center;
+  color: $white;
+
+  .block-content {
+    width: 100%;
+  }
+
+  .cta-bg {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: -1;
+    background-size: cover;
+    &:after {
+      content: '';
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 0;
+      background-color: rgba($black, .85);
+    }
+  }
+
+  .cta-title {
+    font-family: $ff-lato-regular;
+    text-transform: uppercase;
+    @include font-size(body--small);
+  }
+
+  .cta-text {
+    margin-top: vrem(3.5);
+    padding-left: vrem(6);
+    padding-right: vrem(6);
+    font-family: $ff-lato-regular;
+    @include font-size(heading--section);
+
+    @include bp(large) {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+
+  .cta-link {
+    margin-top: vrem(6);
+    a {
+      @include button--tertiary($white, rgba($white, .5));
+      @include button--small;
+      padding-top: vrem(2.5);
+      padding-bottom: vrem(2.5);
+      padding-left: vrem(10);
+      padding-right: vrem(10);
+    }
+  }
+
+  .content {
+    margin: 0 auto;
+    max-width: 845px;
+    z-index: 1;
+  }
+
+
+}

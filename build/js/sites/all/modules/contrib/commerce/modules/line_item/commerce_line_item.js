@@ -1,0 +1,1 @@
+!function(e){Drupal.behaviors.commerceLineItemForm={attach:function(t,i){e("div.commerce-line-item-views-form > form input.form-text",t).keydown(function(t){13===t.keyCode&&(t.preventDefault(),e("input#edit-submit",e(this).parents("form")).click())})}}}(jQuery);

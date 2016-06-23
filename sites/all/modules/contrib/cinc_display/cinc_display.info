@@ -1,0 +1,15 @@
+name = CINC Display
+description = Use CINC to manage display settings
+core = 7.x
+
+dependencies[] = cinc
+dependencies[] = field
+
+files[] = tests/drupal/cinc_display.test
+
+; Information added by Drupal.org packaging script on 2015-03-27
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "cinc_display"
+datestamp = "1427470685"
+

@@ -1,0 +1,43 @@
+//
+// Tooltip
+//
+
+.tooltip {
+  @include font-size(body--tiny);
+  padding: vrem(2);
+  max-width: 300px;
+  background-color: $gray-dark;
+  color: $white;
+
+  @include bp(medium) {
+    max-width: 400px;
+  }
+
+  &:after {
+    content: '';
+    margin-top: -5px;
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    margin-left: -4px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid $gray-dark;
+  }
+}
+
+.tooltip-anchor {
+  display: inline-block;
+  padding: 0;
+  width: vrem(3);
+  height: vrem(3);
+  font-family: $ff-lato-black;
+  font-size: .6rem;
+  line-height: .8rem;
+  text-align: center;
+  color: $gray-dark;
+  border: 2px solid;
+  border-radius: 100%;
+  cursor: pointer;
+  &:hover {color: $gray-darker;}
+}

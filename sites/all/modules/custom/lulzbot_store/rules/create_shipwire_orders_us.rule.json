@@ -1,0 +1,13 @@
+{ "rules_create_shipwire_orders_us" : {
+    "LABEL" : "Create shipwire orders US",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "Shipwire" ],
+    "REQUIRES" : [ "lulzbot_store", "commerce_checkout" ],
+    "ON" : { "commerce_checkout_complete" : [] },
+    "IF" : [ { "lulzbot_store_order_is_us_order" : [] } ],
+    "DO" : [
+      { "lulzbot_store_place_us_shipwire_orders" : { "commerce_order" : [ "commerce_order" ] } }
+    ]
+  }
+}

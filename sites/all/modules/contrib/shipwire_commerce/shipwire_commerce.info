@@ -1,0 +1,14 @@
+name = Shipwire Commerce
+description = Integrates Shipwire shipping quotes, order fulfillment, order tracking, and inventory levels with Drupal Commerce.
+dependencies[] = shipwire
+dependencies[] = commerce_shipping
+package = Shipwire
+core = 7.x
+configure = admin/config/services/shipwire
+
+; Information added by Drupal.org packaging script on 2014-10-27
+version = "7.x-1.2"
+core = "7.x"
+project = "shipwire_commerce"
+datestamp = "1414433029"
+

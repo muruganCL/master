@@ -1,0 +1,243 @@
+//
+// Nav styles.
+//
+
+.nav {
+  @include nav;
+}
+
+.nav-tabs {
+  @include nav--tabs;
+}
+
+.nav--grid {
+  @include nav;
+  @include box--bleed;
+
+  > li {
+    background-color: $blue;
+
+    &:nth-child(2n) { background-color: #00788a; }
+    &:nth-child(3n) { background-color: #2db3d3; }
+    &:nth-child(4n) { background-color: #5a9829; }
+    &:nth-child(5n) { background-color: #81af10; }
+  }
+
+  > li + li {
+    margin-top: 0;
+  }
+
+  > li > a {
+    display: block;
+    color: white;
+    padding: vrem(3) 10px;
+    text-align: center;
+    @include font-size(link--huge);
+    font-family: $ff-serif;
+    text-decoration: none;
+    background-color: inherit;
+    position: relative;
+    transition: .1s ease-out transform;
+    z-index: 1;
+
+    &:before {
+      content: "";
+      display: block;
+      background-color: inherit;
+      position: absolute;
+      @include absolute-center;
+      z-index: -1;
+    }
+
+    &:hover,
+    &:focus {
+      z-index: 2;
+      transform: scale(1.05, 1.05);
+      transition: .3s ease-out transform;
+    }
+  }
+
+  @include bp(medium large) {
+    > li > a {
+      font-size: 18px;
+    }
+  }
+
+  @include bp(medium) {
+    display: table-row;
+
+    > li {
+      display: table-cell;
+      @include nup-item(5);
+      vertical-align: middle;
+      height: 147px;
+      border-right: 3px solid white;
+
+      &:last-child {
+        border-right: 0;
+      }
+
+      > a {
+        padding: vrem(7) 10px;
+
+        &:hover,
+        &:focus {
+          transform: scale(1.1, 1.1);
+        }
+
+        &:before {
+          height: 148px;
+        }
+      }
+    }
+  }
+}
+
+// Main nav
+.nav--main {
+  ul {
+    li {
+      margin-top: 0;
+    }
+  }
+
+  // first level
+  > ul {
+    > li {
+      position: relative;
+      display: inline-block;
+      margin-left: vrem(1.5);
+      margin-right: vrem(1.5);
+
+      @include bp(large) {
+        &:before,
+        &:after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          height: 1px;
+          width: 100%;
+          z-index: -1;
+          background-color: $gray-light;
+          opacity: 0;
+
+          transition: all .3s ease-in-out;
+        }
+      }
+
+      &:before {
+        top: 50%;
+      }
+      &:after {
+        bottom: 50%;
+      }
+      &:hover,
+      &.active-trail {
+        &:before,
+        &:after {
+          opacity: 1;
+        }
+
+        &:before {
+          top: 0;
+        }
+
+        &:after {
+          bottom: 0;
+          top: initial;
+        }
+      }
+      > a {
+        display: inline-block;
+        padding-top: vrem(.5);
+        padding-bottom: vrem(.5);
+        text-transform: uppercase;
+        font-family: $ff-lato-bold;
+        font-weight: $fw-medium;
+        letter-spacing: .07em;
+        @include font-size(header-nav);
+        color: $gray-darkest;
+        transition: all .3s ease-in-out;
+
+        &:hover {
+          color: $green-darker;
+        }
+      }
+      &:first-child {
+        a {
+          padding-left: 0;
+        }
+      }
+    }
+  }
+
+  // second level
+  .expanded {
+    position: relative;
+    > ul {
+
+    }
+  }
+}
+
+#navigation {
+  .expanded {
+    position: relative;
+    > ul {
+      display: inline-block;
+      height: 0;
+      width: 0;
+      overflow: hidden;
+      z-index: -1;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(10px);
+      transition: all .3s ease-in-out;
+      backface-visibility: hidden;
+      transform-style: preserve-3d;
+    }
+    &:hover {
+      &:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        width: 100%;
+        background-color: $gray-light;
+      }
+      > ul {
+        display: block;
+        position: absolute;
+        height: auto;
+        width: auto;
+        min-width: 150px;
+        z-index: 1;
+        overflow: visible;
+        font-family: $ff-lato-regular;
+        background-color: $gray-dark;
+        opacity: 1;
+        visibility: visible;
+
+        transform: translateY(0px);
+        > li {
+          display: block;
+          > a {
+            display: block;
+            padding: vrem(1.5) vrem(2);
+            border-bottom: 1px solid $gray;
+            @include font-size(header-nav);
+            color: $green-light;
+
+            transition: all .3s ease-in-out;
+            &:hover {
+              color: rgba($green-light, .7);
+            }
+          }
+        }
+      }
+    }
+  }
+}

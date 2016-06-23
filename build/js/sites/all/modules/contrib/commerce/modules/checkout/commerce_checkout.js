@@ -1,0 +1,1 @@
+!function(e){Drupal.behaviors.commerceCheckout={attach:function(t,c){e("input.checkout-continue:not(.checkout-processed)",t).addClass("checkout-processed").click(function(){var t=e(this);t.clone().insertAfter(this).attr("disabled",!0).next().removeClass("element-invisible"),t.hide()})}}}(jQuery);

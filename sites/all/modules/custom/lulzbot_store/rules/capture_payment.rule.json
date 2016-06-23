@@ -1,0 +1,20 @@
+{ "rules_capture_order_payment" : {
+    "LABEL" : "Capture order payment",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "lulzbot" ],
+    "REQUIRES" : [ "rules", "lulzbot_store", "entity" ],
+    "ON" : { "commerce_order_update" : [] },
+    "IF" : [
+      { "data_is" : { "data" : [ "commerce-order:status" ], "value" : "processing_payment" } },
+      { "NOT data_is" : {
+          "data" : [ "commerce-order-unchanged:status" ],
+          "value" : "processing_payment"
+        }
+      }
+    ],
+    "DO" : [
+      { "lulzbot_store_action_capture_payment" : { "commerce_order" : [ "commerce_order" ] } }
+    ]
+  }
+}

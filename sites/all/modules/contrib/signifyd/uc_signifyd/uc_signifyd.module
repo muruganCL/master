@@ -1,0 +1,154 @@
+<?php
+/**
+ * UberCart Signifyd Module.
+ *
+ * Provides UberCart integration with Signifyd on payment success.
+ */
+
+/**
+ * Implements hook_uc_order().
+ */
+function uc_signifyd_uc_order($op, $order, $arg2) {
+  if ($op == 'update' && $arg2 == 'payment_received') {
+    $data = uc_signifyd_parse_data($order);
+    SignifydApi::submit_case($data);
+  }
+}
+
+/**
+ * Creates a data array for signifyd from an order entity.
+ * @param $order
+ * @return array
+ */
+function uc_signifyd_parse_data($order) {
+  $date = new DateTime('@' . $order->modified);
+  $iso  = $date->format(DateTime::ISO8601);
+  $name = $order->delivery_first_name . ' ' . $order->delivery_last_name;
+
+
+  $phone = isset($order->delivery_phone) ? $order->delivery_phone : $order->billing_phone;
+
+  $data = array(
+    'purchase' => array(
+      'browserIpAddress' => isset($_SERVER['HTTP_X_FORWARDED_FOR']) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $order->host,
+      'orderId'          => $order->order_id,
+      'createdAt'        => $iso,
+      'paymentGateway'   => $order->payment_method,
+      'currency'         => $order->currency,
+      'orderChannel'     => 'WEB',
+      'totalPrice'       => $order->order_total,
+      'products'         => uc_signifyd_product_data($order),
+      'shipments'        => uc_signifyd_shipping_data($order),
+    ),
+    'recipient' => array(
+      'fullName'          => $name,
+      'confirmationEmail' => $order->primary_email,
+      'confirmationPhone' => $phone,
+      'organization'      => $order->billing_company,
+      'deliveryAddress' => array(
+        'streetAddress' => $order->delivery_street1,
+        'unit'          => $order->delivery_street2,
+        'city'          => $order->delivery_city,
+        'postalCode'    => $order->delivery_postal_code,
+        // 'countryCode' UC stores ids, need function to translate to ISO-3166
+      ),
+    ),
+    'card' => array(
+      'cardHolderName' => $order->billing_first_name . ' ' . $order->billing_last_name,
+      'expiryMonth'    => $order->payment_details['cc_exp_month'],
+      'expiryYear'     => $order->payment_details['cc_exp_year'],
+      // 'bin' first 6, need live data to see if we have access to this from VirtualMerchant
+      // 'last4' need live data to see if we have access to this from VirtualMerchant
+      // 'hash' unique id for this card, check live data
+
+      'billingAddress' => array(
+        'streetAddress' => $order->billing_street1,
+        'unit'          => $order->billing_street2,
+        'city'          => $order->billing_city,
+        'postalCode'    => $order->billing_postal_code,
+        // 'countryCode' UC stores ids, need function to translate to ISO-3166
+      ),
+    ),
+
+    'userAccount' => uc_signifyd_account_data($order),
+    // seller isn't need as the site represents the seller, if 3rd party sales are possible this is needed
+  );
+
+  return $data;
+}
+
+/**
+ * Gets account specific data and returns the userAccount section data.
+ */
+function uc_signifyd_account_data($order) {
+  $user = user_load($order->uid);
+  if($user->uid > 0) {
+    // createdDate
+    $created = new DateTime('@'.$user->created);
+    $created = $created->format(DateTime::ISO8601);
+
+    // aggregateOrderCount - The total count of orders placed by this account since it was created, including the current order.
+    $result = db_query("SELECT COUNT(*) FROM {uc_orders} WHERE order_status = 'completed' AND uid = :uid", array(':uid' => $user->uid));
+    $count  = $result->fetchField();
+    $count  = $count++; // current order
+  
+    // aggregateOrderDollars - The total amount spent by this account since it was created, including the current order.
+    $result = db_query("SELECT SUM(order_total) FROM {uc_orders} WHERE order_status = 'completed' AND uid = :uid", array(':uid' => $user->uid));
+    $sum    = $result->fetchField();
+    $sum    = is_null($sum) ? 0 : $sum;
+    $sum   += $order->order_total; // current order
+  
+    // lastOrderId
+    $result = db_query("SELECT order_id FROM {uc_orders} WHERE order_status = 'completed' AND uid = :uid ORDER BY order_id ", array(':uid' => $user->uid));
+    $order  = $result->fetchField();
+  }
+  
+  $data = array(
+    'emailAddress'          => $user->mail,
+    'username'              => $user->name,
+    'createdDate'           => $created,
+    'accountNumber'         => $user->uid,
+    'aggregateOrderCount'   => $count,
+    'aggregateOrderDollars' => $sum,
+    'lastOrderId'           => $order->order_id,
+  );
+
+  return $data;
+}
+
+function uc_signifyd_product_data($order) {
+  $all_products = array();
+
+  foreach ($order->products as $product) {
+    $data = array(
+      'itemId'       => $product->nid,
+      'itemName'     => $product->title,
+      'itemQuantity' => (int)$product->qty,
+      'itemPrice'    => $product->price,
+      // 'itemWeight' needs to be in grams, doesn't seem to be available
+    );
+
+    $all_products[] = $data;
+  }
+
+  return $all_products;
+}
+
+function uc_signifyd_shipping_data($order) {
+  $shipment = array();
+
+  foreach ($order->line_items as $item) {
+    if ('shipping' == $item['type']) {
+      $shipment = array(
+        'shippingMethod' => $item['title'],
+        'shippingPrice'  => $item['amount'],
+        // 'trackingNumber' is added in comments, would be on order complete
+      );
+
+      break;
+    }
+  }
+
+  return $shipment;
+}
+

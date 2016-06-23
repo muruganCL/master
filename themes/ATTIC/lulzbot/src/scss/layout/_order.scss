@@ -1,0 +1,46 @@
+//
+// Order page
+//
+
+.commerce-price-formatted-components,
+.commerce-order-handler-area-order-total .commerce-price-formatted-components {
+  margin-top: vrem(6);
+  width: 100%;
+  margin-left: auto;
+
+  @include bp(medium) {
+    width: 33%;
+  }
+
+  td {
+    border-top: 0;
+  }
+  tr {
+    &.odd {
+      background-color: transparent;
+    }
+    &:last-child {
+      td {
+        @include rule(top);
+      }
+    }
+  }
+}
+
+.entity-commerce-order {
+  .label {
+    margin-top: vrem(6);
+    margin-bottom: vrem(2);
+    display: block;
+  }
+}
+
+.views-field-commerce-total {
+  font-family: $ff-titillium-semibold;
+  font-weight: $fw-medium;
+
+  @include bp(medium) {
+    font-family: $ff-sans;
+    font-weight: $fw-regular;
+  }
+}

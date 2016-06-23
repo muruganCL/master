@@ -1,0 +1,28 @@
+<?php
+/**
+ * Implements hook_block_info_alter().
+ */
+function lulzbot_deploy_block_info_alter(&$blocks) {
+  $disable_blocks = array(
+    'search.form',
+    'system.powered-by',
+    'system.navigation',
+    'user.login',
+  );
+  foreach ($disable_blocks as $disable_block) {
+    $pieces = explode('.', $disable_block);
+    if (isset($blocks[$pieces[0]][$pieces[1]])) {
+      $blocks[$pieces[0]][$pieces[1]]['status'] = 0;
+    }
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function lulzbot_deploy_flush_caches() {
+  if (function_exists('lulzbot_deploy_disable_modules')) {
+    lulzbot_deploy_disable_modules();
+  }
+  return array();
+}

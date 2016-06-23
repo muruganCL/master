@@ -1,0 +1,30 @@
+//
+// Header navigation
+//
+
+#navigation {
+  .js & {display: none;}
+
+  @include bp(large) {
+    display: block;
+    flex: 1;
+    margin-top: vrem(-3);
+
+    .js & {display: block;}
+  }
+  .block-menu {
+    margin-left: vrem(4);
+    top: 0;
+    transition: top .3s ease-in-out;
+  }
+
+  // Fixed nav
+  .nav-below & {
+    .block-menu {
+      @include bp(large) {
+        position: relative;
+        top: 10px;
+      }
+    }
+  }
+}

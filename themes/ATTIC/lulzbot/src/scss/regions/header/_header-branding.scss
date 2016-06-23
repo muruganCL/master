@@ -1,0 +1,58 @@
+//
+// Header branding
+//
+
+#branding {
+  position: relative;
+  transition-duration: .3s;
+  transition-property: width;
+  transition-timing-function: ease-in-out;
+
+  @include bp(large) {
+    width: 115px;
+
+    .nav-below & {
+      width: 54px;
+    }
+  }
+
+  h1 {
+    display: inline-block;
+    line-height: 0;
+
+    a {
+      display: inline-block;
+    }
+  }
+
+  .logo--regular {
+    display: none;
+    width: 100%;
+
+    @include bp(large) {
+      display: inline-block;
+    }
+  }
+
+  .logo--small {
+    display: block;
+    width: 140px;
+
+    @include bp(small) {
+      width: 200px;
+    }
+
+    @include bp(large) {
+      display: none;
+    }
+  }
+  // @include bp(large) {
+  //   .logo--regular {
+  //     display: inline-block;
+  //   }
+  //   .logo--small {
+  //     display: none;
+  //   }
+  // }
+
+}

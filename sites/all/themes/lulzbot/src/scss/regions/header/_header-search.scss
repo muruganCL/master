@@ -1,0 +1,23 @@
+//
+// Header search styles.
+//
+
+.header-search {
+  position: relative;
+  width: 220px;
+  .form-text {
+    width: 100%;
+    padding-right: 40px;
+    padding-left: vrem(3);
+    padding-bottom: 0;
+    font-family: $ff-lato-regular;
+    @include font-size(utility-nav);
+    background-color: transparent;
+  }
+  .form-submit {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    margin-top: -8px;
+  }
+}

@@ -1,0 +1,79 @@
+//
+// Header styles
+//
+
+@import "header-search";
+@import "header-nav";
+@import "header-branding";
+@import "header-utility";
+@import "header-drawer";
+
+
+#header {
+  background: transparent;
+  margin-top: 0;
+  position: fixed;
+  padding-top: vrem(2);
+  padding-bottom: vrem(2);
+  transition: background .3s ease-in-out, margin-top .3s ease-in-out, padding .3s ease-in-out, box-shadow .1s ease-in-out;
+  width: 100%;
+  z-index: 10;
+
+  .not-front & {
+    background-color: $white;
+  }
+
+  .prevent-scroll & {
+    background-color: $white;
+    margin-top: 0 !important; // Force fixed position if mobile nav open
+
+    @include bp(large) {
+      background-color: transparent;
+    }
+  }
+
+  @include bp(large) {
+    padding-top: vrem(4);
+    padding-bottom: vrem(4);
+  }
+
+  > div {
+    @include bp(large) {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-content: center;
+      align-items: center;
+    }
+  }
+
+  // Un-fix
+  .nav-up & {
+    margin-top: -62px;
+
+    @include bp(small) {
+      margin-top: -82px;
+    }
+
+    @include bp(large) {
+      margin-top: -175px;
+    }
+  }
+
+  // White header
+  .nav-below & {
+    background: $white;
+    box-shadow: 0 0px 125px rgba($black, 0.2);
+    transition: background .3s ease-in-out .3s, margin-top .3s ease-in-out, padding .3s ease-in-out, box-shadow .3s ease-in-out .3s;
+
+    @include bp(large) {
+      padding-bottom: vrem(3);
+      padding-top: vrem(3.25);
+    }
+  }
+}
+.header {
+  margin: 0;
+  position: relative;
+  z-index: 2;
+}

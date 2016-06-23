@@ -1,0 +1,58 @@
+//
+// Image styles.
+//
+
+//
+// Borders
+//
+.image-frame > img,
+.image-frame > a > img {
+  border: 1px solid $clr-border;
+  box-shadow: 0 1px 3px rgba($gray-dark, .6);
+  padding: 4px;
+  background-color: $white;
+}
+
+
+//
+// Floating
+//
+.image-left {
+  float: left;
+  margin: 0 $w-gutter rhythm(1) 0;
+}
+
+.image-right {
+  float: right;
+  margin: 0 0 rhythm(1) $w-gutter;
+}
+
+.callout-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  min-height: 545px;
+  z-index: -1;
+  background-size: cover;
+}
+
+.basic-page--image {
+  display: table;
+  width: 100%;
+  position: relative;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 360px;
+  z-index: 1;
+  background-size: cover;
+  background-color: $green;
+  background-blend-mode: multiply;
+}
+
+.product--teaser-image {
+  display: inline-block;
+  width: 100%;
+  border: 1px solid $clr-border;
+}

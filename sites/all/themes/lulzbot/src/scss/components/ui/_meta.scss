@@ -1,0 +1,22 @@
+//
+// Meta
+//
+
+.meta {
+  @include clearfix;
+  margin-bottom: vrem(7);
+}
+.date {
+  display: inline-block;
+  margin-right: vrem(4);
+  padding-bottom: vrem(1);
+  font-family: $ff-lato-bold;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  @include font-size(date);
+
+  &.date-border {
+    padding-right: vrem(2);
+    @include rule(bottom);
+  }
+}

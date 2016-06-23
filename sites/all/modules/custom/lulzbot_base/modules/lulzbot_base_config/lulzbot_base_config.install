@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_base_config_enable() {
+  lulzbot_base_config_create_menus();
+  lulzbot_base_config_create_menu_items();
+}
+
+/**
+ * Creates menus.
+ */
+function lulzbot_base_config_create_menus() {
+
+  // Footer menu
+  $footer_menu = CINC::init('Menu')->machine_name('footer-menu');
+
+  if (!$footer_menu->exists()) {
+    $footer_menu->create();
+  }
+
+  // Utility menu
+  $utility_menu = CINC::init('Menu')->machine_name('utility-menu');
+
+  if (!$utility_menu->exists()) {
+    $utility_menu->create();
+  }
+}
+
+/**
+ * Creates menu items.
+ */
+function lulzbot_base_config_create_menu_items() {
+
+  CINC::init('MenuLink')->machine_name('footer-menu|about')->read()
+    ->set('expanded', 0)
+    ->create_or_update();
+
+  CINC::init('MenuLink')->machine_name('footer-menu|contact')->read()
+    ->set('expanded', 0)
+    ->create_or_update();
+
+  CINC::init('MenuLink')->machine_name('utility-menu|user/login')->read()
+    ->set('link_title', 'Log in')
+    ->set('expanded', 0)
+    ->create_or_update();
+
+  CINC::init('MenuLink')->machine_name('utility-menu|user/register')->read()
+    ->set('link_title', 'Register')
+    ->set('expanded', 0)
+    ->create_or_update();
+
+  CINC::init('MenuLink')->machine_name('utility-menu|user/logout')->read()
+    ->set('link_title', 'Log out')
+    ->set('expanded', 0)
+    ->create_or_update();
+
+  CINC::init('MenuLink')->machine_name('utility-menu|user/[current-user:uid]')->read()
+    ->set('link_title', 'Account')
+    ->set('expanded', 0)
+    ->create_or_update();
+
+}

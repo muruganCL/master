@@ -1,0 +1,578 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_base_enable() {
+  lulzbot_base_create_bean_types();
+  lulzbot_base_create_beans();
+  lulzbot_base_create_content_types();
+  lulzbot_base_create_page_fields();
+  lulzbot_base_create_vocabularies();
+  lulzbot_base_create_terms();
+  lulzbot_base_create_contexts();
+  lulzbot_base_create_filters();
+  lulzbot_base_create_blocks();
+  lulzbot_base_create_roles();
+  lulzbot_base_set_view_mode();
+
+  // apply display settings
+  module_invoke_all('cinc_display_apply');
+
+  // allow users to register accounts
+  variable_set('user_register', 1);
+  variable_set('node_submitted_page', FALSE);
+}
+
+/**
+ * Implements hook_disable().
+ */
+function lulzbot_base_disable() {
+  if (defined('STDIN')) {
+    lulzbot_base_delete_contexts();
+  }
+}
+
+/**
+ * Creates bean types.
+ */
+function lulzbot_base_create_bean_types() {
+  $general = CINC::init('BeanType')->machine_name('general');
+  $general
+    ->set('label', 'General')
+    ->create_or_update()
+    ->allow_view_access(array('anonymous user', 'authenticated user', 'administrator'));
+
+  $long_text = CINC::init('LongTextField')
+    ->machine_name('field_bean_general_text')
+    ->set_instance('label', 'Text')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update();
+  $general->add_field_if_missing($long_text);
+
+  $image = CINC::init('ImageField')
+    ->machine_name('field_bean_general_image')
+    ->set_instance('label', 'Image')
+    ->set_instance('description', 'If bean is used on product landing pages, will be used to override default header image.')
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update();
+  $general->add_field_if_missing($image);
+}
+
+/**
+ * Creates beans.
+ */
+function lulzbot_base_create_beans() {
+
+  // Create and fill general beans.
+
+  $general_beans = array(
+    'copyright' => array(
+      'label' => 'Copyright',
+      'title' => '',
+    ),
+    'footer_social' => array(
+      'label' => 'Footer Social Links',
+      'title' => '',
+      'text_format' => 'html_text',
+    ),
+  );
+
+  lulzbot_base_create_general_beans($general_beans, 'lulzbot_base');
+}
+
+/**
+ * Create content types.
+ */
+function lulzbot_base_create_content_types() {
+  // part content type
+  CINC::init('ContentType')
+    ->machine_name('page')
+    ->set('title_label', 'Basic Page')
+    ->set('pathauto', '[node:title]')
+    ->set('description', 'Use this page for general unstructured content.')
+    ->create_or_update();
+}
+
+/**
+ * Add fields to the page content type.
+ */
+function lulzbot_base_create_page_fields() {
+  // file field
+  $file = CINC::init('FileField')
+    ->machine_name('field_page_file')
+    ->create_or_update()
+    ->set_instance('label', 'File')
+    ->set_instance('description', 'Upload a file togo with this posting.')
+    ->set_instance('widget.weight', 30)
+    ->create_or_update_instance_for('node', 'page');
+
+  // intro text field
+  $intro = CINC::init('LongTextField')
+    ->machine_name('field_page_intro')
+    ->create_or_update()
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 0)
+    ->create_or_update_instance_for('node', 'page');
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_page_image')
+    ->create_or_update()
+    ->set_instance('label', 'Featured Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this page and the header image.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'page');
+
+  // background triangle field
+  $triangle = CINC::init('BooleanField')
+    ->machine_name('field_part_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'page');
+
+  // body field
+  $body = CINC::init('Field')->machine_name('body')->read_instance_for('node', 'page')
+    ->set_instance('description', 'Enter the body of this posting.')
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'page');
+
+  // related products field
+  $related = CINC::init('EntityReferenceField')
+    ->machine_name('field_page_related_prod')
+    ->create_or_update()
+    ->set_instance('label', 'Related Product(s)')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'filament' => 'filament',
+          'part' => 'part',
+          'tool_head' => 'tool_head',
+          'printer' => 'printer',
+          'merchandise' => 'merchandise',
+        ),
+      )
+    )
+    ->create_or_update_instance_for('node', 'page');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  CINC::init('FieldGroup')
+    ->machine_name('group_presentation|node|page|form')
+    ->set('label', 'Presentation')
+    ->read()
+    ->add_fields(array($triangle))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  // general info field group
+  CINC::init('FieldGroup')
+    ->machine_name('group_general_info|node|page|form')
+    ->set('label', 'General Info')
+    ->read()
+    ->add_fields(array($intro, $image, $file, $body))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // related content field group
+  CINC::init('FieldGroup')
+    ->machine_name('group_related|node|page|form')
+    ->set('label', 'Related Content')
+    ->set('weight', 30)
+    ->read()
+    ->add_fields(array($related))->create_or_update();
+}
+
+/**
+ * Create vocabularies.
+ */
+function lulzbot_base_create_vocabularies() {
+  $vocabs = array(
+    'ease_of_use' => 'Ease of Use',
+    'filament_colors' => 'Filament Colors',
+    'filament_compatible' => 'Filament Compatible Printers and Tool Heads',
+    'ideal_applications' => 'Ideal Applications',
+    'materials' => 'Materials',
+    'part_compatible_printers' => 'Part Compatible Printers',
+    'part_types' => 'Part Types',
+    'printer_types' => 'Printer Types',
+    'tool_head_compatible' => 'Tool Head Compatible Printers',
+    'topics' => 'Topics',
+    'tshirt_sizes' => 'T-Shirt Sizes',
+    'tshirt_colors' => 'T-Shirt Colors',
+    'weight' => 'Weight',
+    'width' => 'Width',
+    'filament_gauge' => 'Filament Gauge/Width',
+    'printer_power' => 'Printer Power Supply',
+    'companies' => 'Companies',
+  );
+
+  foreach ($vocabs as $machine_name => $name) {
+    CINC::init('TaxonomyVocabulary')
+      ->machine_name($machine_name)
+      ->set('name', $name)
+      ->create_or_update();
+  }
+
+  // remove this field
+  CINC::init('ImageField')
+    ->machine_name('field_filament_color_image')
+    ->delete_and_purge();
+}
+
+/**
+ * Create terms
+ */
+function lulzbot_base_create_terms() {
+  $terms = array(
+    'printer_types' => array(
+      'TAZ 5',
+      'TAZ 4',
+      'TAZ 3',
+      'TAZ 2',
+      'TAZ 1',
+      'Mini',
+    ),
+    'filament_compatible' => array(
+      'TAZ 1-4 Budaschnozzle',
+      'TAZ 5 Hexagon',
+      'Hexagon',
+      'Budaschnozzle',
+    ),
+    'ease_of_use' => array(
+      'Great for Beginners',
+      'Suited for Intermediate Users',
+      'Suited for Advanced Users',
+    ),
+    'part_compatible_printers' => array(
+      'LulzBot Mini',
+      'LulzBot TAZ 5',
+    ),
+  );
+
+  $vocabs = taxonomy_vocabulary_get_names();
+  foreach ($terms as $vocab => $vocab_terms) {
+    foreach ($vocab_terms as $term) {
+      $this_term = taxonomy_get_term_by_name($term, $vocab);
+      if (!$this_term) {
+        taxonomy_term_save((object) array(
+          'name' => $term,
+          'vid' => $vocabs[$vocab]->vid,
+        ));
+      }
+    }
+  }
+}
+
+/**
+ * Creates global contexts.
+ */
+function lulzbot_base_create_contexts() {
+
+  $global_context = CINC::init('Context')->machine_name('global');
+
+  if (!$global_context->exists()) {
+
+    $blocks = $global_context->read()->get('reactions.block.blocks');
+
+    $global_context
+      ->set('tag', 'global')
+      ->add_global_condition()
+      ->create();
+
+    if (!isset($blocks['search-form'])) {
+      $global_context
+        ->add_block_reaction('search', 'form', 'header', 2)
+        ->update();
+    }
+
+    if (!isset($blocks['system-main-menu'])) {
+      $global_context
+        ->add_block_reaction('system', 'main-menu', 'navigation', 1)
+        ->update();
+    }
+
+    if (!isset($blocks['menu-utility-menu'])) {
+      $global_context
+        ->add_block_reaction('menu', 'utility-menu', 'header', 3)
+        ->update();
+    }
+
+    if (!isset($blocks['menu-footer-menu'])) {
+      $global_context
+        ->add_block_reaction('menu', 'footer-menu', 'footer', 1)
+        ->update();
+    }
+
+    if (!isset($blocks['bean-footer_social'])) {
+      $global_context
+        ->add_block_reaction('bean', 'footer_social', 'footer', 2)
+        ->update();
+    }
+  }
+}
+
+/**
+ * Create text formats and filters.
+ */
+function lulzbot_base_create_filters() {
+  CINC::init('FilterFormat')->machine_name('full_html')
+    ->read()
+    ->set('weight', -10)
+    ->add_filter('node_embed')
+    ->create_or_update();
+
+  CINC::init('FilterFormat')->machine_name('filtered_html')
+    ->read()
+    ->set('weight', -8)
+    ->create_or_update();
+
+  CINC::init('FilterFormat')->machine_name('impactful_titles')
+    ->read()
+    ->set('weight', -7)
+    ->set('format', 'impactful_titles')
+    ->set('name', 'Impactful Titles')
+    ->add_filter('italics')
+    ->create_or_update();
+
+  CINC::init('FilterFormat')->machine_name('html_text')
+    ->read()
+    ->set('weight', -6)
+    ->set('format', 'html_text')
+    ->set('name', 'HTML Text')
+    ->create_or_update();
+
+  CINC::init('FilterFormat')->machine_name('plain_text')
+    ->read()
+    ->set('weight', 0)
+    ->create_or_update();
+}
+
+/**
+ * Creats blocks.
+ */
+function lulzbot_base_create_blocks() {
+
+  CINC::init('Block')->machine_name('system:main-menu')
+    ->set('title', '<none>')
+    ->create_or_update();
+
+  CINC::init('Block')->machine_name('menu:utility-menu')
+    ->set('title', '<none>')
+    ->create_or_update();
+
+  CINC::init('Block')->machine_name('menu:footer-menu')
+    ->set('title', '<none>')
+    ->create_or_update();
+
+}
+
+/**
+ * Deletes base contexts.
+ */
+function lulzbot_base_delete_contexts() {
+  CINC::init('Context')->machine_name('global')->delete();
+}
+
+/**
+ * Code to create roles.
+ */
+function lulzbot_base_create_roles() {
+  // roles (ignoring the anonymous, authenticated, administrator roles)
+  $roles = array(
+    'content admin',
+    'guest writer',
+    'reseller gold',
+    'reseller silver',
+    'reseller bronze',
+    'educator/government',
+    'hackerspace',
+    'staff',
+    'customer service',
+  );
+
+  // Permissions by role.
+  $permissions = array(
+    'anonymous' => array(
+      'access content',
+    ),
+    'authenticated' => array(
+      'access content',
+      'use text format filtered_html',
+    ),
+    'content admin' => array(
+      'access content',
+      'use text format filtered_html',
+      'use text format full_html',
+      'use text format impactful_titles',
+      'access administration pages',
+      'access administration menu',
+      'access content overview',
+      'view the administration theme',
+      'view own unpublished content',
+      'create page content',
+      'edit own page content',
+      'delete own page content',
+      'view revisions',
+      'revert revisions',
+      'delete revisions',
+      'create url aliases',
+      'administer taxonomy',
+    ),
+    'guest writer' => array(
+      'access content',
+      'use text format filtered_html',
+      'access administration pages',
+      'access administration menu',
+      'access content overview',
+      'view the administration theme',
+      'view own unpublished content',
+    ),
+    'customer service' => array(
+      'access administration pages',
+      'access administration menu',
+      'administer commerce discounts',
+    ),
+  );
+
+  // Enable default permissions for system roles.
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, $permissions['anonymous']);
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, $permissions['authenticated']);
+
+  $weight = 2;
+  foreach ($roles as $role) {
+    if (!$this_role = user_role_load_by_name($role)) {
+      $this_role = new stdClass();
+      $this_role->name = $role;
+      $this_role->weight = $weight;
+      user_role_save($this_role);
+    }
+    $weight++;
+    if (isset($permissions[$role])) {
+      user_role_grant_permissions($this_role->rid, $permissions[$role]);
+    }
+  }
+
+  // Create a default role for site administrators, with all available
+  // permissions assigned.
+  if (!$admin_role = user_role_load_by_name('administrator')) {
+    $admin_role = new stdClass();
+    $admin_role->name = 'administrator';
+    $admin_role->weight = 3;
+    user_role_save($admin_role);
+  }
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+
+  // Set this as the administrator role.
+  variable_set('user_admin_role', $admin_role->rid);
+
+  // Assign user 1 the "administrator" role.
+  $administrator = user_load(1);
+  if (!in_array('administrator', array_values($administrator->roles))) {
+    db_insert('users_roles')
+      ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+      ->execute();
+  }
+
+  // give content admin access to manage all content
+  $nodes = entity_get_info('node');
+  $content_permissions = array();
+  foreach (array_keys($nodes['bundles']) as $bundle) {
+    $content_permissions[] = 'create ' . $bundle . ' content';
+    $content_permissions[] = 'edit own ' . $bundle . ' content';
+    $content_permissions[] = 'edit any ' . $bundle . ' content';
+    $content_permissions[] = 'delete own ' . $bundle . ' content';
+    $content_permissions[] = 'delete any ' . $bundle . ' content';
+  }
+
+  $admin = user_role_load_by_name('content admin');
+  user_role_grant_permissions($admin->rid, $content_permissions);
+}
+
+/**
+ * Sets view modes enabled
+ */
+function lulzbot_base_set_view_mode() {
+
+  // Case study
+  $case_study_settings = field_bundle_settings('node', 'case_study');
+  $case_study_settings['view_modes']['promo']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'case_study', $case_study_settings);
+
+  // in_the_news
+  $in_the_news_settings = field_bundle_settings('node', 'in_the_news');
+  $in_the_news_settings['view_modes']['promo']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'in_the_news', $in_the_news_settings);
+
+  // Tool head
+  $announcement_settings = field_bundle_settings('node', 'announcement');
+  $announcement_settings['view_modes']['promo']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'announcement', $announcement_settings);
+
+  // forum_post
+  $forum_post_settings = field_bundle_settings('node', 'forum_post');
+  $forum_post_settings['view_modes']['promo']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'forum_post', $forum_post_settings);
+
+  // Event
+  $event_settings = field_bundle_settings('node', 'event');
+  $event_settings['view_modes']['promo']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'event', $event_settings);
+}
+
+/**
+ * Create fields for the user entity.
+ */
+function lulzbot_base_create_user_fields() {
+  // add a companies term reference field.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_user_companies')
+    ->set('cardinality', -1)
+    ->allow_vocab('companies')
+    ->create_or_update()
+    ->set_instance('label', 'Verified Companies')
+    ->create_or_update_instance_for('user', 'user');
+
+  // add an field to the company taxonomy
+  CINC::init('TextField')
+    ->machine_name('field_company_domain')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Email domain')
+    ->set_instance('description', 'Enter the domain used for this company\'s email. When users signup for an account with this email, the company will be associated automatically with their account.')
+    ->create_or_update_instance_for('taxonomy_term', 'companies');
+}
+
+/**
+ * Add the companies field to users.
+ */
+function lulzbot_base_update_7100() {
+  lulzbot_base_create_vocabularies();
+  lulzbot_base_create_user_fields();
+}
+
+/**
+ * Ensure all company fields have been added.
+ */
+function lulzbot_base_update_7101() {
+  lulzbot_base_create_user_fields();
+}
+
+/**
+ * Ensure all company fields have been added.
+ */
+function lulzbot_base_update_7102() {
+  lulzbot_base_create_user_fields();
+}
+
+/**
+ * Ensure all company fields have been added.
+ */
+function lulzbot_base_update_7103() {
+  lulzbot_base_create_vocabularies();
+}

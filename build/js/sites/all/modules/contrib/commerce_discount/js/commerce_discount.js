@@ -1,0 +1,1 @@
+!function(e,c){c.behaviors.commerceDiscount={},c.behaviors.commerceDiscount.attach=function(c){e("input:radio").change(function(){e("input:radio:not(:checked)").closest("div").removeClass("selected"),e(this).closest("div").addClass("selected")}).filter(":checked").closest("div").addClass("selected")}}(jQuery,Drupal);

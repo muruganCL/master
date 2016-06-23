@@ -1,0 +1,1262 @@
+<?php
+
+function lulzbot_store_sandbox_form($form, &$form_state) {
+  $form['value'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Test Value'),
+  );
+
+  $form['submit'] = array(
+    '#value' => t('Run Test'),
+    '#type' => 'submit',
+  );
+
+  return $form;
+}
+
+function lulzbot_store_sandbox_form_submit($form, &$form_state) {
+  $order = commerce_order_load($form_state['values']['value']);
+  commerce_piwik_commerce_checkout_complete($order);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function lulzbot_store_menu() {
+  $items = array();
+
+  // api pages
+  $items['ajax/store/availability'] = array(
+    'title' => 'Product availability',
+    'page callback' => 'lulzbot_store_ajax_availability',
+    'access arguments' => array('access content'),
+    'file' => 'lulzbot_store.availability.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['ajax/store/location'] = array(
+    'title' => 'Set user location',
+    'page callback' => 'lulzbot_store_ajax_set_location',
+    'access arguments' => array('access content'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['ajax/store/notify'] = array(
+    'title' => 'Notify Me',
+    'page callback' => 'lulzbot_store_ajax_notify_me',
+    'access arguments' => array('access content'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  // signifyd webhook callback
+  $items['webhooks/signifyd'] = array(
+    'title' => 'Signifyd webhook',
+    'page callback' => 'lulzbot_store_webhook_signifyd',
+    'access arguments' => array('access content'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  // admin pages
+  $items['admin/commerce/config/countries'] = array(
+    'title' => 'Countries',
+    'description' => 'Administer countries available in the store',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_admin_countries'),
+    'access callback' => 'lulzbot_store_admin_access',
+    'file' => 'includes/lulzbot_store.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/commerce/orders/%commerce_order/shipwire_api'] = array(
+    'title' => 'Shipwire',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_admin_shipwire_view', 3),
+    'access arguments' => array('view all shipwire shipments'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+    'file' => 'includes/lulzbot_store.admin.inc',
+  );
+
+  $items['admin/commerce/orders/%commerce_order/signifyd'] = array(
+    'title' => 'Signifyd',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_admin_signifyd', 3),
+    'access arguments' => array('administer commerce_order entities'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 7,
+    'file' => 'includes/lulzbot_store.admin.inc',
+  );
+
+  $items['admin/commerce/config/free-countries'] = array(
+    'title' => 'Countries with Free Shipping',
+    'description' => 'Administer countries with free shipping',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_admin_free_countries'),
+    'access callback' => 'lulzbot_store_admin_access',
+    'file' => 'includes/lulzbot_store.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/commerce/orders/update'] = array(
+    'title' => 'Update Orders',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_orders_update_form'),
+    'access arguments' => array('update shipwire order statuses'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/development/sandbox'] = array(
+    'title' => t('Admin Sandbox'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_store_sandbox_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/development/api'] = array(
+    'title' => 'API Configuration',
+    'description' => 'View API endpoint configuration',
+    'page callback' => 'lulzbot_store_admin_api_configuration',
+    'access callback' => 'lulzbot_store_admin_api_access',
+    'access arguments' => array(
+      'edit shipwire settings',
+      'administer site configuration',
+      'administer rules',
+    ),
+    'file' => 'includes/lulzbot_store.admin.inc',
+  );
+
+  // misc
+  $items['filament-color-image/%/%'] = array(
+    'title' => 'Filament Color Image',
+    'page callback' => 'lulzbot_store_filament_color_image',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  // pages
+  $items['store'] = array(
+    'title' => 'Store',
+    'page callback' => 'lulzbot_store_create_store_page',
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+  );
+
+  $items['store/filament'] = array(
+    'title' => 'Filament',
+    'page callback' => 'lulzbot_store_create_filament_page',
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+  );
+
+  $items['store/merchandise'] = array(
+    'title' => 'Merchandise',
+    'page callback' => 'lulzbot_store_create_merchandise_page',
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+  );
+
+  $items['store/parts'] = array(
+    'title' => 'Parts',
+    'page callback' => 'lulzbot_store_create_parts_page',
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+  );
+
+  $items['store/tool-heads'] = array(
+    'title' => 'Tool Heads',
+    'page callback' => 'lulzbot_store_create_toolheads_page',
+    'access arguments' => array('access content'),
+    'file' => 'includes/lulzbot_store.pages.inc',
+  );
+
+  $items['user/clear-location'] = array(
+    'title' => 'Clear location cookie',
+    'page callback' => 'lulzbot_store_clear_location_page',
+    'access arguments' => array('access content'),
+    'file' => 'lulzbot_store.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Provides a form to manually update shipwire status.
+ */
+function lulzbot_store_orders_update_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Update Orders',
+  );
+
+  return $form;
+}
+
+/**
+ * Start batch to update shipwires statuses.
+ */
+function lulzbot_store_orders_update_form_submit($form, &$form_state) {
+  $batch = lulzbot_store_orders_update_batch();
+  batch_set($batch);
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Disable the Shipwire Commerce module admin interface.
+ */
+function lulzbot_store_menu_alter(&$items) {
+  unset($items['admin/commerce/orders/%commerce_order/shipwire']);
+  unset($items['admin/commerce/orders/%/shipwire']);
+  unset($items['admin/commerce/orders/%commerce_order/shipwire/new']);
+  unset($items['admin/commerce/orders/%/shipwire/new']);
+}
+
+/**
+ * Implements hook_permission().
+ */
+function lulzbot_store_permission() {
+  return array(
+    'update shipwire order statuses' => array(
+      'title' => t('Update shipwire statuses'),
+      'description' => t('Update shipwire statuses on commerce orders'),
+    ),
+    'administer store countries' => array(
+      'title' => t('Administer store countries'),
+      'description' => t('Control the countries available in the store'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function lulzbot_store_form_alter(&$form, &$form_state, $form_id) {
+  // dpm($form_id);
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Add product availability to the product form (in the admin).
+ */
+function lulzbot_store_form_commerce_product_ui_product_form_alter(&$form, &$form_state, $form_id) {
+  module_load_include('inc', 'lulzbot_store', 'includes/lulzbot_store.admin');
+  lulzbot_store_admin_add_product_availability($form, $form_state);
+}
+
+/**
+ * Implements hook_commerce_check_availability_config().
+ */
+function lulzbot_store_commerce_check_availability_config_alter(&$config) {
+  $config['product_types']['tshirt'] = array(
+    'checker_class' => 'LulzbotStoreLocationAvailabilityCheck',
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function lulzbot_store_views_api() {
+  return array('api' => 3.0);
+}
+
+/**
+ * Implements hook_views_default_views().
+ */
+function lulzbot_store_views_default_views() {
+  return stools_views_from_directory_scan('lulzbot_store');
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for commerce_add_to_cart_form().
+ *
+ * Add the check availability elements to the add to car form and add the notify
+ * me functionality.
+ */
+function lulzbot_store_form_commerce_cart_add_to_cart_form_alter(&$form, &$form_state, $form_id) {
+  module_load_include('inc', 'lulzbot_store');
+  $location = lulzbot_store_user_country();
+  $countries = lulzbot_store_get_countries();
+  $viewing = '';
+  if ($location) {
+    $location_name = $location;
+    if (in_array($location, array_keys($countries))) {
+      $location_name = $countries[$location];
+    }
+
+    $viewing = t('Viewing availability for !location', array('!location' => $location_name));
+  }
+
+  $formui = new FormUI($form);
+
+  // change the filament colors to use the filament colors element.
+  // See lulzbot_store_element_info() and filament-colors.tpl.php.
+  $formui
+    ->set('attributes.field_product_filament_colors', '#type', 'filament_colors')
+    ->set('quantity', '#attributes', array('pattern' => '[0-9]*', 'class' => array('quantity')));
+
+  $formui
+    // set the weight and all the elements added later will carry that weight,
+    // increment it as they are added.
+    ->setWeight(60)
+    ->addValidateHandler('lulzbot_store_validate_add_to_cart_form')
+    ->add('country', $formui->hidden($location)->setAttribute('id', 'add-to-cart-user-location'))
+    ->add('refresh', $formui->hidden(0)->setAttribute('id', 'add-to-cart-refresh'))
+    ->add('change_location', '<div id="lulzbot-store-user-location" class="location"><span>' . $viewing . '</span> ' . l(t('Change location'), '', array('attributes' => array('class' => array('link--change-location')))) . '</div>');
+
+  $country_options = $countries;
+  asort($country_options);
+  $country_options = array('--' => '--------------------', 'US' => 'United States', '-' => '--------------------') + $country_options;
+  array_unshift($country_options, t('Pick your country'));
+
+  $formui
+    ->addFieldset('country', array('attributes' => array('class' => array('country-selection')), 'weight' => $formui->weight))
+    ->incrementWeight()
+    ->add(
+      'country',
+      'countries',
+      $formui->select($country_options)
+        ->setOptions(array(
+          'title' => '<span>REQUIRED - Select your country.</span> Orders can only be shipped from warehouses that serve a given country.',
+          'description' => '',
+          'default_value' => $location,
+        ))
+    )
+    ->add('country', 'check_availability', '<button id="lulzbot-store-check-availability" class="button--check-availability" type="button" name="check_availability">' . t('Check availability') . '</button>');
+
+  // show the notify functionality, if the product is unavailable and the user
+  // does not already have an active notification record for this product.
+  if ($form['submit']['#value'] === t('Unavailable')) {
+    // check if the user already has a notification record.
+    $product_id = isset($form['product_id']['#value']) ? intval($form['product_id']['#value']) : intval($form['product_id']['#default_value']);
+    $product = commerce_product_load($product_id);
+    $email = lulzbot_store_get_user_email();
+    if (!lulzbot_store_user_has_notification_for_product($product, $email)) {
+
+      $formui
+        ->add('notification_btn', '<a class="notify-btn link--go" href="#"><span>' . t('*NOT AVAILABLE') . '</span> - ' . t('Get an alert when this becomes available') . '</a>');
+
+      $formui
+        ->addFieldset('notification', array('attributes' => array('class' => array('notify-me')), 'weight' => $formui->weight))
+        ->incrementWeight()
+        ->add('notification', 'notify_me', $formui->email($email)->setOption('description', 'Enter your email address to receive an email when this product becomes available.')->setAttribute('placeholder', t('Notify me when this product is available')))
+        ->add('notification', 'notify', '<button id="lulzbot-store-notify-me" class="button--notify-me" type="button">' . t('Notify me') . '</button>')
+        ->add('notification', 'notify_token', $formui->hidden(drupal_get_token()));
+    }
+    else {
+      $formui->add('notification', '<p class="message">' . t('You will be notified when this product becomes available.') . '</p>');
+    }
+  }
+
+  $form = $formui->generate();
+  drupal_add_js(drupal_get_path('module', 'lulzbot_store') . '/js/sweetalert.min.js');
+  drupal_add_js(array(
+    'lulzbot_store' => array(
+      'location' => $location,
+      'cookie' => lulzbot_store_cookie_name(),
+    ),
+  ), 'setting');
+
+
+  if (isset($form_state['context'])) {
+    $node = node_load($form_state['context']['entity_id']);
+    if ($node && $node->type === 'filament') {
+      drupal_add_js(drupal_get_path('module', 'lulzbot_store') . '/js/filament.js');
+    }
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for commerce_checkout_form_shipping().
+ *
+ * @todo Not used, probably can be removed.
+ */
+function lulzbot_store_form_commerce_checkout_form_shipping_alter(&$form, &$form_state, $form_id) {
+}
+
+/**
+ * Implements hook_commerce_shipping_service_rate_options_alter().
+ *
+ * Sort the shipping rate options and remove the cheapest option if free
+ * shipping is available.
+ */
+function lulzbot_store_commerce_shipping_service_rate_options_alter(&$options, $order, &$form_state) {
+  // first get an array of shipping options and their prices
+  $shipping = array();
+  foreach ($order->shipping_rates as $key => $value) {
+    $shipping[$key] = $value->commerce_unit_price[LANGUAGE_NONE][0]['amount'];
+  }
+
+  // sort the shipping options by price
+  asort($shipping);
+
+  // build and replace the shipping options array
+  $shipping_options = array();
+  $shipping_order = array_keys($shipping);
+  foreach ($shipping_order as $service) {
+    $shipping_options[$service] = $options[$service];
+  }
+
+  if (isset($options['lulzbot_store_free_shipping'])) {
+    $keys = array_keys($shipping_options);
+    for ($i = 0; $i < count($keys); $i++) {
+      $next = ($i + 1);
+      if ($keys[$i] === 'lulzbot_store_free_shipping' && isset($keys[$next]) && isset($shipping_options[$keys[$next]])) {
+        unset($shipping_options[$keys[$next]]);
+        break;
+      }
+    }
+  }
+
+  $options = $shipping_options;
+}
+
+/**
+ * Preprocess nodes to include the location.
+ */
+function lulzbot_store_preprocess_node(&$vars) {
+  if (isset($vars['field_product_reference'])) {
+    drupal_add_js(drupal_get_path('module', 'lulzbot_store') . '/js/location.js');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for views_form_commerce_cart_form_default().
+ *
+ * Check the availability of the line items in this order to make sure they
+ * are still available.
+ */
+function lulzbot_store_form_views_form_commerce_cart_form_default_alter(&$form, &$form_state, $form_id) {
+  $errors = array();
+
+  foreach ($form['edit_delete'] as $key => $value) {
+    if (!is_numeric($key)) {
+      continue;
+    }
+
+    $line_item = commerce_line_item_load($value['#line_item_id']);
+    if (!$line_item) {
+      continue;
+    }
+
+    $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);
+    if (!$product) {
+      continue;
+    }
+
+    // check availability
+    module_load_include('inc', 'lulzbot_store');
+    module_load_include('inc', 'lulzbot_store', 'lulzbot_store.availability');
+    $country = lulzbot_store_user_country();
+
+    // check if the product is available still
+    if (!lulzbot_store_product_is_available($product->sku, $country, array('cache' => FALSE))) {
+      $errors[] = t('The product %product is no longer available for your location', array('%product' => $product->title));
+      form_set_error('edit_quantity', t('The product %product is no longer available for your location', array('%product' => $product->title)));
+    }
+    // check if the quantity is available still
+    elseif (!lulzbot_store_product_quantity_is_available($product->sku, $country, $line_item->quantity)) {
+      $message = lulzbot_store_availability_message($product, $line_item->quantity, $country);
+      $errors[] = array('message' => $message, 'line_item' => $line_item->line_item_id, 'position' => $key);
+      form_set_error('edit_quantity', $message);
+    }
+  }
+
+  if ($errors) {
+    // pass on the list of errors to JS
+    drupal_add_js(array(
+      'lulzbot_store' => array(
+        'errors' => $errors,
+      ),
+    ), 'setting');
+
+    // add JS to update the cart display
+    drupal_add_js(drupal_get_path('module', 'lulzbot_store') . '/js/cart_errors.js');
+
+    // disable the checkout button.
+    $form['actions']['checkout']['#attributes'] = array('disabled' => 'disabled');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for commerce_checkout_form_checkout().
+ */
+function lulzbot_store_form_commerce_checkout_form_checkout_alter(&$form, &$form_state, $form_id) {
+  $form['buttons']['continue']['#validate'][] = 'lulzbot_store_checkout_check_availiability';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for commerce_checkout_form_review().
+ */
+function lulzbot_store_form_commerce_checkout_form_review_alter(&$form, &$form_state, $form_id) {
+  $handlers = $form['buttons']['continue']['#submit'];
+  array_unshift($handlers, 'lulzbot_store_checkout_review_form_submit');
+  $form['buttons']['continue']['#submit'] = $handlers;
+  $form['buttons']['continue']['#value'] = t('Proceed with payment');
+}
+
+/**
+ * Validate the checkout.
+ */
+function lulzbot_store_checkout_check_availiability($form, &$form_state) {
+  module_load_include('inc', 'lulzbot_store');
+  module_load_include('inc', 'lulzbot_store', 'lulzbot_store.availability');
+  $order = $form_state['order'];
+  $order = commerce_order_load($order->order_number);
+  $order_country = lulzbot_store_get_order_country($order);
+
+  $line_items = lulzbot_store_get_order_line_items($order);
+  foreach ($line_items as $line_item) {
+    $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);
+    if (!$product) {
+      continue;
+    }
+
+    if (!lulzbot_store_product_is_available($product->sku, $order_country, array('cache' => FALSE))) {
+      $errors[] = t('The product %product is no longer available for your location', array('%product' => $product->title, ''));
+      form_set_error('edit_quantity', t('The product %product is no longer available for your location %country', array('%product' => $product->title, '%country' => $order_country)));
+    }
+    // check if the quantity is available still
+    elseif (!lulzbot_store_product_quantity_is_available($product->sku, $order_country, $line_item->quantity)) {
+      $message = lulzbot_store_availability_message($product, $line_item->quantity, $country);
+      $errors[] = array('message' => $message, 'line_item' => $line_item->line_item_id, 'position' => $key);
+      form_set_error('edit_quantity', $message);
+    }
+  }
+}
+
+/**
+ * Handle saving some CC details.
+ *
+ * @see lulzbot_store_form_commerce_checkout_form_review_alter()
+ */
+function lulzbot_store_checkout_review_form_submit($form, $form_state) {
+  if ($form_state['values']['commerce_payment']['payment_method'] === 'paypal_wpp|commerce_payment_paypal_wpp') {
+    $details =& $form_state['values']['commerce_payment']['payment_details'];
+
+    $card_details = array();
+    $card_details['bin'] = substr($details['credit_card']['number'], 0, 6);
+    $card_details['last4'] = substr($details['credit_card']['number'], -4);
+    $card_details['exp_month'] = $details['credit_card']['exp_month'];
+    $card_details['exp_year'] = $details['credit_card']['exp_year'];
+
+    // setup encryption
+    $method = 'aes-256-cbc';
+    $salt = variable_get('drupal_hash_salt');
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($method));
+
+    // encrypt the data
+    $card = json_encode($card_details);
+    $encrypted = openssl_encrypt($card, $method, $salt, 0, $iv);
+    $encrypted_data = base64_encode($iv) . ':' . $encrypted;
+
+    // save the encrypted data in the database
+    db_merge('lulzbot_store_data')
+      ->key(array('order_id' => $form_state['order']->order_id))
+      ->fields(array('data' => $encrypted_data, 'timestamp' => REQUEST_TIME))
+      ->execute();
+  }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function lulzbot_store_element_info() {
+  return array(
+    'filament_colors' => array(
+      '#input' => TRUE,
+      '#theme' => array('filament_colors'),
+      '#theme_wrappers' => array('form_element'),
+      '#process' => array('lulzbot_store_process_filament_colors_element'),
+    ),
+  );
+}
+
+/**
+ * Process the filament colors element.
+ */
+function lulzbot_store_process_filament_colors_element($element, $form_state, $form) {
+  module_load_include('inc', 'lulzbot_store', 'lulzbot_store.availability');
+  if (isset($form_state['context'])) {
+    $element['#nid'] = $form_state['context']['entity_id'];
+
+    // get the available color options
+    $element['#available_colors'] = lulzbot_store_available_filament_colors($element['#nid']);
+
+    // get the sku-color map
+    $element['#sku_color_map'] = lulzbot_store_available_filament_color_sku_map($element['#nid']);
+    drupal_add_js(array(
+      'filamentSkuColorMap' => $element['#sku_color_map'],
+    ), 'setting');
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function lulzbot_store_theme($existing, $type, $theme, $path) {
+  return array(
+    'filament_colors' => array(
+      'render element' => 'element',
+      'path' => drupal_get_path('module', 'lulzbot_store') . '/templates',
+      'template' => 'filament-colors',
+    ),
+  );
+}
+
+/**
+ * Theme function for colors.
+ */
+function theme_filament_colors() {
+  // dpm(func_get_args(), __FUNCTION__);
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ *
+ * Add a free shipping option.
+ */
+function lulzbot_store_commerce_shipping_service_info() {
+  return array(
+    'lulzbot_store_free_shipping' => array(
+      'title' => 'Free Shipping',
+      'shipping_method' => 'shipwire_api',
+      'price_component' => 'shipping',
+      'callbacks' => array(
+        'rate' => 'lulzbot_store_rates',
+        'details_form' => 'lulzbot_store_rates_details_form',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_order_status_info().
+ *
+ * Add new order statuses.
+ */
+function lulzbot_store_commerce_order_status_info() {
+  return array(
+    'pending_verification' => array(
+      'name' => 'pending_verification',
+      'title' => 'Pending: Verification',
+      'state' => 'pending',
+      'weight' => 10,
+    ),
+    'processing_payment' => array(
+      'name' => 'processing_payment',
+      'title' => 'Processing: Payment',
+      'state' => 'pending',
+      'weight' => 20,
+    ),
+    'processing_shipping' => array(
+      'name' => 'processing_shipping',
+      'title' => 'Processing: Shipping',
+      'state' => 'pending',
+      'weight' => 30,
+    ),
+    'hold_for_review' => array(
+      'name' => 'hold_for_review',
+      'title' => 'Held for review',
+      'state' => 'pending',
+      'weight' => 25,
+    ),
+  );
+}
+
+/**
+ * Validate the form.
+ *
+ * Availability checks are cached in this call.
+ */
+function lulzbot_store_validate_add_to_cart_form($form, &$form_state) {
+  if (isset($form_state['line_item'])) {
+    $line_item =& $form_state['line_item'];
+
+    // $product_id = stools_field_value($line_item, 'commerce_product', LANGUAGE_NONE, array('key' => 'product_id'));
+    $product_id = $form_state['values']['product_id'];
+    $product = commerce_product_load($product_id);
+    if ($product) {
+      module_load_include('inc', 'lulzbot_store');
+      module_load_include('inc', 'lulzbot_store', 'lulzbot_store.availability');
+      $country = lulzbot_store_user_country();
+      $quantity = $form_state['values']['quantity'];
+      if (!lulzbot_store_product_is_available($product->sku, $country, array('cache' => TRUE))) {
+        $errors[] = t('The product %product is no longer available for your location', array('%product' => $product->title));
+        form_set_error('edit_quantity', t('The product %product is no longer available for your location', array('%product' => $product->title)));
+      }
+      // check if the quantity is available still
+      elseif (!lulzbot_store_product_quantity_is_available($product->sku, $country, $quantity, array('cache' => TRUE))) {
+        $message = lulzbot_store_availability_message($product, $quantity, $country);
+        $errors[] = array('message' => $message, 'line_item' => $line_item->line_item_id);
+        form_set_error('edit_quantity', $message);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_addressfield_default_values().
+ *
+ * Set the default country to the user's country.
+ */
+function lulzbot_store_addressfield_default_values_alter(&$default_values) {
+  module_load_include('inc', 'lulzbot_store');
+  if ($country = lulzbot_store_user_country()) {
+    $default_values['country'] = $country;
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function lulzbot_store_flush_caches() {
+  return array('cache_store');
+}
+
+/**
+ * User access check for custom store admin pages.
+ */
+function lulzbot_store_admin_access() {
+  if (user_access('access administration pages') && user_access('administer store countries')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Provide shipping rates.
+ */
+function lulzbot_store_rates($shipping_service, $order) {
+  module_load_include('inc', 'lulzbot_store');
+  module_load_include('inc', 'lulzbot_store', 'lulzbot_store.rules');
+  $free_countries = lulzbot_store_get_free_countries();
+  $order_country = lulzbot_store_get_order_country($order);
+
+  if (in_array($order_country, $free_countries)) {
+    $total = stools_field_value($order, 'commerce_order_total');
+    if ($total['amount'] >= variable_get('lulzbot_store_free_shipping_price', 5000)) {
+      return array(
+        'amount' => 0,
+        'currency_code' => 'USD',
+        'data' => array(),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_shipwire_api_get_rates_for_order().
+ */
+function lulzbot_store_shipwire_api_get_rates_for_order($order, $profile, $items) {
+  $decorated_order = lulzbot_store_get_decorated_order($order);
+  $decorated_order = lulzbot_store_add_order_shipwire_orders($decorated_order);
+
+  // get the rates as an array of requests for Shipwire.
+  $rates = array_values(lulzbot_store_get_line_item_rate_data($decorated_order));
+  return $rates;
+}
+
+/**
+ * Get rates_data for all line item bundles.
+ */
+function lulzbot_store_get_line_item_rate_data($decorated_order) {
+  $get_rates = function ($shipment) use ($decorated_order) {
+    $items = array_map('shipwire_api_map_line_items', $shipment['items']);
+    $items = array_filter($items, 'shipwire_api_filter_blank_line_items');
+
+    $warehouse = $shipment['warehouse'];
+
+    $order = $decorated_order['commerce_order'];
+    $ship_to = shipwire_api_get_order_shipping_address($order);
+
+    $currency = stools_field_value(
+      $order,
+      'commerce_order_total',
+      LANGUAGE_NONE,
+      array('key' => 'currency_code')
+    );
+
+    return array(
+      'options' => array(
+        'currency' => $currency,
+        'canSplit' => 1,
+        'warehouseId' => $warehouse,
+      ),
+      'order' => array(
+        'shipTo' => $ship_to,
+        'items' => $items,
+      ),
+    );
+  };
+
+  $rates_data = array_map($get_rates, $decorated_order['line_item_bundles']);
+  return $rates_data;
+}
+
+/**
+ * Details form for shipping rates.
+ *
+ * Used to show shipping estimates.
+ */
+function lulzbot_store_rates_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service) {
+  // Find the cheapest shipping option
+
+  // Get all shipping methods
+  $methods = array_keys($order->shipping_rates);
+
+  // Given a rate, return its price
+  $get_price = function ($rate) {
+    stools_field_value(
+      $rate,
+      'commerce_unit_price',
+      LANGUAGE_NONE,
+      array('key' => 'amount')
+    );
+  };
+
+  // Reducer which returns the current cheapest method or the current method if
+  // its cheaper. Uses the order and depends on the $get_price function.
+  $get_cheapest_method = function ($cheapest_method, $method) use ($order, $get_price) {
+    if ($method == 'lulzbot_store_free_shipping') return $cheapest_method;
+    if (!$cheapest_method) { return $method; }
+
+    $cheapest_price = $get_price($order->shipping_rates[$cheapest_method]);
+    $current_price = $get_price($order->shipping_rates[$cheapest_method]);
+
+    return ($cheapest_price < $current_price) ? $cheapest_method : $method;
+  };
+
+  // For all methods, find the cheapest one.
+  $cheapest_method = array_reduce($methods, $get_cheapest_method, FALSE);
+   
+  // If we didn't find a cheapest method for some reason (e.g. only free
+  // shipping is available), just return.
+  if (!$cheapest_method) {
+    return;
+  }
+
+  $shipping_info = $order->shipping_rates[$cheapest_method];
+  $service_info = $shipping_info->commerce_unit_price[LANGUAGE_NONE][0]['data']['components'][0]['price']['shipwire_api'];
+  $min = NULL;
+  $max = NULL;
+
+  foreach ($service_info as $this_service_info) {
+    //$foo = "bar";
+    foreach ($this_service_info['service_option']->shipments as $shipment) {
+      if ($min === NULL || strtotime($shipment->expectedDeliveryMinDate) < $min) {
+        $min = strtotime(sprintf("%s +2 days", $shipment->expectedDeliveryMinDate));
+      }
+
+      if ($max === NULL || strtotime($shipment->expectedDeliveryMaxDate) > $max) {
+        $max = strtotime(sprintf("%s +2 days", $shipment->expectedDeliveryMaxDate));
+      }
+    }
+  }
+
+  if (!$min || !$max) {
+    return;
+  }
+
+  $delivery = format_date($min);
+  if ($min !== $max) {
+    $delivery .= ' &mdash; ' . format_date($max);
+  }
+
+  return array('estimate' => array('#type' => 'markup', '#markup' => '<div class="delivery-estimate"><strong>Expected delivery:</strong> ' . $delivery . '</div>'));
+}
+
+/**
+ * Implements hook_mail().
+ *
+ * Send mails.
+ */
+function lulzbot_store_mail($key, &$message, $params) {
+  if ($key === 'product_availability') {
+    $product_count = count($params['products']);
+
+    $subject = t('Inventory Notification from LulzBot.com');
+    $message_text = format_plural(
+      $product_count,
+      'You requested to be notified when a product on LulzBot.com arrives back in stock. This product is now available for purchase, and your email address will be automatically removed from the inventory notification list for this product.',
+      'You requested to be notified when a product on LulzBot.com arrives back in stock. These products are now available for purchase, and your email address will be automatically removed from the inventory notification list for these products.'
+    );
+
+    $message_text .= ' ' . format_plural(
+      $product_count,
+      'Visit the product page by clicking the link below:',
+      'Visit the product page by clicking the links below:'
+    );
+
+    $thank_you = "Please note: Products are sold on a first-come, first-served basis. Due to high demand for certain products, this product may sell out again soon.\n\n";
+    $thank_you .= "This email is an automatically generated notification. If you have any questions, contact us by emailing sales@lulzbot.com or by calling +1-970-377-1111.\n\n";
+    $thank_you .= "Thank you for your business,\nAleph Objects, Inc.";
+
+    $product_list = array();
+    foreach ($params['products'] as $sku => $product) {
+      $query = new EntityFieldQuery();
+
+      $query
+        ->entityCondition('entity_type', 'node', '=')
+        ->fieldCondition(
+          'field_product_reference',
+          'product_id',
+          $product->product_id, '='
+        )->range(0, 1);
+
+      if ($result = $query->execute()) {
+        $nid = reset(array_keys($result['node']));
+        $path = drupal_get_path_alias("node/{$nid}");
+        $product_list[] = '– ' . $product->title . ': ' . url($path, array('absolute' => TRUE));
+      }
+    }
+    $product_list = implode("\n", $product_list);
+
+    $message['subject'] = $subject;
+    $message['body'] = array(
+      $message_text . "\n\n" . $product_list . "\n\n" . $thank_you,
+    );
+  }
+}
+
+/**
+ * Implements hook_cinc_display_apply().
+ */
+function lulzbot_store_cinc_display_apply() {
+  CINCDisplay::init('printer_display', 'default', 'bean')
+    ->field('field_printer_display_mini', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'links' => 0,
+        ),
+      ))
+    ->field('field_printer_display_taz', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'links' => 0,
+        ),
+      ))
+    ->field('field_printer_display_desc_mini')
+    ->field('field_printer_display_desc_taz')
+    ->field('field_printer_display_specs')
+    ->update();
+}
+
+/**
+ * Implements hook_inline_conditions_info().
+ */
+function lulzbot_store_inline_conditions_info() {
+  $conditions = array();
+
+  // User is associated with a company: order
+  $conditions['lulzbot_store_order_user_has_company'] = array(
+    'label' => t('User company'),
+    'entity type' => 'commerce_order',
+    'callbacks' => array(
+      'configure' => 'lulzbot_store_order_user_has_company_configure',
+      'build' => 'lulzbot_store_order_user_has_company_build',
+    ),
+  );
+
+  $conditions['lulzbot_store_product_owner_has_compay'] = array(
+    'label' => t('User company'),
+    'entity type' => 'commerce_line_item',
+    // 'rule condition name' => 'data_is',
+    'callbacks' => array(
+      'configure' => 'lulzbot_store_order_user_has_company_configure',
+    ),
+  );
+
+  return $conditions;
+}
+
+/**
+ * Callback for configure on lulzbot_store_order_user_has_company.
+ */
+function lulzbot_store_order_user_has_company_configure($settings) {
+  $form = array();
+
+  $vocab = taxonomy_vocabulary_machine_name_load('companies');
+  $terms = taxonomy_get_tree($vocab->vid);
+  $term_options = array();
+  foreach ($terms as $term) {
+    $term_options[$term->tid] = $term->name;
+  }
+
+  $form['companies'] = array(
+    '#type' => 'select',
+    '#title' => t('Select companies'),
+    '#options' => $term_options,
+    '#default_value' => isset($settings['companies']) ? $settings['companies'] : array(),
+    '#required' => TRUE,
+    '#multiple' => TRUE,
+  );
+
+  return $form;
+}
+
+/**
+ * Callback for build on lulzbot_store_order_user_has_company.
+ */
+function lulzbot_store_order_user_has_company_build(EntityDrupalWrapper $wrapper, $companies) {
+  if ($wrapper->owner->value()) {
+    $user = $wrapper->owner->value();
+  }
+
+  if (!isset($user) || empty($user->roles)) {
+    return FALSE;
+  }
+
+}
+
+/**
+ * Implements hook_commerce_signifyd_case_submitted().
+ */
+function lulzbot_store_commerce_signifyd_case_submitted($order, $response) {
+  db_insert('lulzbot_store_signifyd')
+    ->fields(array(
+      'order_id' => $order->order_number,
+      'response' => json_encode($response),
+      'updated' => time(),
+    ))->execute();
+}
+
+/**
+ * Implements hook_commerce_signifyd_data_alter().
+ *
+ * Adds phone numbers to signifyd information.
+ */
+function lulzbot_store_commerce_signifyd_data_alter(&$data, $order) {
+  $shipping_profile = stools_field_value($order, 'commerce_customer_shipping', LANGUAGE_NONE, array('key' => 'profile_id'));
+  $billing_profile = stools_field_value($order, 'commerce_customer_billing', LANGUAGE_NONE, array('key' => 'profile_id'));
+  $shipping = commerce_customer_profile_load($shipping_profile);
+  $billing = commerce_customer_profile_load($billing_profile);
+
+  $shipping_phone = stools_field_value($shipping, 'field_customer_phone');
+  $billing_phone = stools_field_value($billing, 'field_customer_phone');
+  $data['recipient']['confirmationPhone'] = $billing_phone;
+  $data['userAccount']['phone'] = $shipping_phone;
+  $data['paymentGateway'] = 'paypal';
+
+  // Signifyd maps/supports the following codes. If the AVS is not one of these,
+  // pass the "U" for "unchecked"
+  $valid_avs = array('Y', 'A', 'Z', 'B', 'P', 'N', 'U');
+  if (!in_array($data['purchase']['avsResponse'], $valid_avs)) {
+    $data['purchase']['avsResponse'] = 'U';
+  }
+
+  // Signifyd maps/supports the following codes for CVV. If the CVV is not one
+  // of these, pass 'P' for 'unchecked'.
+  $valid_cvv = array('M', 'N', 'P');
+  if (!in_array($data['purchase']['cvvResponse'], $valid_cvv)) {
+    $data['purchase']['cvvResponse'] = 'P';
+  }
+
+  // check if there are card details
+  $details = db_select('lulzbot_store_data', 'd')->fields('d')->condition('order_id', $order->order_id, '=')->execute()->fetchAssoc();
+  if ($details) {
+    // setup encryption
+    $method = 'aes-256-cbc';
+    $salt = variable_get('drupal_hash_salt');
+    $parts = explode(':', $details['data']);
+    $iv = base64_decode($parts[0]);
+    $decrypted = openssl_decrypt($parts[1], $method, $salt, 0, $iv);
+    if ($decrypted) {
+      $card_details = json_decode($decrypted);
+      $data['card']['bin'] = $card_details->bin;
+      $data['card']['last4'] = $card_details->last4;
+      $data['card']['expiryMonth'] = $card_details->exp_month;
+      $data['card']['expiryYear'] = $card_details->exp_year;
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_paypal_api_request_alter().
+ *
+ * Adds phone number to paypal information.
+ */
+function lulzbot_store_commerce_paypal_api_request_alter(&$nvp, $order, $payment_method) {
+  $shipping_profile = stools_field_value($order, 'commerce_customer_shipping', LANGUAGE_NONE, array('key' => 'profile_id'));
+  $shipping = commerce_customer_profile_load($shipping_profile);
+
+  if ($payment_method['base'] == 'commerce_paypal_wpp') {
+    $nvp['PHONENUM'] = stools_field_value($shipping, 'field_customer_phone');
+    $shipping_address = stools_field_value($shipping, 'commerce_customer_address');
+
+    $nvp += array(
+      'SHIPTONAME' => substr($shipping_address['name_line'], 0, 25),
+      'SHIPTOSTREET' => substr($shipping_address['thoroughfare'], 0, 100),
+      'SHIPTOSTREET2' => substr($shipping_address['premise'], 0, 100),
+      'SHIPTOCITY' => substr($shipping_address['locality'], 0, 40),
+      'SHIPTOSTATE' => substr($shipping_address['administrative_area'], 0, 40),
+      'SHIPTOCOUNTRY' => $shipping_address['country'],
+      'SHIPTOZIP' => substr($shipping_address['postal_code'], 0, 20),
+    );
+  }
+}
+
+/**
+ * Implements hook_commerce_paypal_wps_order_form_data_alter().
+ *
+ * Adds shipping address to WPS orders.
+ */
+function lulzbot_store_commerce_paypal_wps_order_form_data_alter(&$data, $order) {
+  $customer_profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+
+  // create additional data from customer profile to paypal form
+  $data['first_name'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['first_name'];
+  $data['last_name'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['last_name'];
+  $data['address1'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['thoroughfare'];
+  $data['city'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['locality'];
+  $data['zip'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['postal_code'];
+  $data['state'] = $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['administrative_area'];
+  $data['phone'] = $customer_profile->field_customer_phone[LANGUAGE_NONE][0]['value'];
+  $data['no_shipping'] = 0;
+}
+
+/**
+ * Access callback for the API admin page.
+ */
+function lulzbot_store_admin_api_access() {
+  $permissions = func_get_args();
+  foreach ($permissions as $permission) {
+    if (!user_access($permission)) {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Add some useful information to the admin view of a commerce order.
+ */
+function lulzbot_store_entity_view_alter(&$build, $type) {
+  switch ($type) {
+  case 'commerce_order':
+    switch ($build['#view_mode']) {
+    case 'administrator':
+      $order = $build['#entity'];
+
+      $build['status'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Quick View'),
+        '#weight' => -100,
+      );
+
+      $build['status']['markup'] = array(
+        '#theme' => 'table',
+        '#weight' => -100,
+        '#header' => array(
+          array(
+            //'data' => t('Quick View'),
+            'colspan' => 2,
+          ),
+        ),
+        '#rows' => array(
+          array(t('Email'), l($order->mail, sprintf('mailto:%s', $order->mail))),
+          array(t('Status'), $order->status),
+          array(t('Last Activity'), sprintf('%s: %s', date(DATE_RFC1036, $order->changed), $order->log)),
+          array(t('User Orders'), l(t('View Orders'), sprintf('user/%d/orders', $order->uid))),
+        ),
+      );
+    }
+  }
+}
+
+/*
+ * Implements hook_user_presave().
+ *
+ * Assign the user's companies.
+ */
+function lulzbot_store_user_presave(&$edit, $account, $category) {
+  $user_email = $account->mail;
+
+  // find if this domain name is in field_company_domain
+  if (preg_match('/^([^@]+)@(.+)$/', $user_email, $matches)) {
+    $results = db_query(
+      'SELECT t.tid FROM field_data_field_company_domain d JOIN taxonomy_term_data t ON t.tid=d.entity_id WHERE field_company_domain_value=:domain',
+      array(':domain' => $matches[2])
+    );
+    if ($results) {
+      $companies = array();
+      foreach ($results as $result) {
+        $companies[] = array('tid' => $result->tid);
+      }
+      if (isset($edit['field_user_companies'], $edit['field_user_companies'][LANGUAGE_NONE]) && !empty($edit['field_user_companies'][LANGUAGE_NONE])) {
+        $user_companies = array_filter($edit['field_user_companies'][LANGUAGE_NONE], function ($company) use ($companies) {
+          foreach ($companies as $this_company) {
+            if ($company['tid'] !== $this_company['tid']) {
+              return TRUE;
+            }
+          }
+          return FALSE;
+        });
+        if ($user_companies) {
+          $companies = array_merge($user_companies, $companies);
+        }
+      }
+      $edit['field_user_companies'] = array(LANGUAGE_NONE => $companies);
+    }
+  }
+}
+
+/**
+ * Implements hook_taxonomy_term_insert().
+ */
+function lulzbot_store_taxonomy_term_insert($term) {
+  lulzbot_store_update_user_companies($term);
+}
+
+/**
+ * Implements hook_taxonomy_term_update().
+ */
+function lulzbot_store_taxonomy_term_update($term) {
+  lulzbot_store_update_user_companies($term);
+}
+
+/**
+ * Update the user's verified companies to match their email.
+ */
+function lulzbot_store_update_user_companies($term) {
+  if (stools_field_has_value($term, 'field_company_domain')) {
+    // find users with this domain
+    $domain = stools_field_value($term, 'field_company_domain');
+
+    if ($domain) {
+      // get users which match this domain
+      $results = db_query('SELECT uid FROM users u WHERE mail LIKE :domain', array(':domain' => '%@' . db_like($domain)));
+      while ($user = $results->fetchAssoc()) {
+        // check if the user already has this association
+        $exists = db_query(
+          'SELECT * FROM field_data_field_company_domain d WHERE entity_id=:uid AND field_company_domain_value=:tid',
+          array(':uid' => $user['uid'], ':tid' => $term->tid)
+        )->fetchAssoc();
+        if (!$exists) {
+          $user = user_load($user['uid']);
+          // $companies = stools_field_value($user, 'field_company_domain');
+          // $companies[] = array('tid' => $term->id);
+          // $user->field_company_domain = $companies;
+          user_save($user);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_currency_info_alter().
+ */
+function lulzbot_store_commerce_currency_info_alter(&$currencies, $langcode) {
+  $currencies['USD']['symbol'] = 'US$';
+}

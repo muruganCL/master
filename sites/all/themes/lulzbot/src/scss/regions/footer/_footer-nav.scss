@@ -1,0 +1,9 @@
+//
+// Footer Navigation styles.
+//
+
+.footer-nav {
+  @include nav;
+  @include nav--inline;
+  @include footer-nav;
+}

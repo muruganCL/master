@@ -1,0 +1,22 @@
+name = LulzBot Store
+description = Store configuration and rules for lulzbot.com
+core = 7.x
+
+dependencies[] = bean
+dependencies[] = radioactivity
+dependencies[] = rules
+dependencies[] = commerce_addressbook
+dependencies[] = commerce_customer
+dependencies[] = commerce_stock
+dependencies[] = shipwire_api
+dependencies[] = formui
+dependencies[] = elements
+dependencies[] = better_exposed_filters
+dependencies[] = commerce_product_urls
+dependencies[] = signifyd
+dependencies[] = commerce_signifyd
+
+files[] = lulzbot_store.inc
+files[] = lulzbot_store.availability.inc
+files[] = includes/lulzbot_store.admin.inc
+files[] = includes/lulzbot_store.pages.inc

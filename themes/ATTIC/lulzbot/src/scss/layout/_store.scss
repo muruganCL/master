@@ -1,0 +1,61 @@
+//
+// Store main landing
+//
+
+.page-store {
+  .printer--comparison {
+    .field-collection-container,
+    .compare--description {
+      display: none;
+    }
+    .compare,
+    .compare--printer-info {
+      &:before,
+      &:after {
+        display: none;
+      }
+    }
+    .compare {padding-bottom: 0;}
+    .compare--spacer {
+      min-width: 125px;
+    }
+  }
+}
+
+.store--category {
+
+  &:first-of-type {
+    margin-top: vrem(10);
+    position: relative;
+    z-index: 1;
+  }
+  margin-top: vrem(24);
+
+  .link--go--container {
+    margin-top: vrem(2);
+  }
+}
+
+.store--products {
+  @include clearfix;
+  margin-top: vrem(6);
+  > li {
+    margin-top: vrem(12);
+
+    &:first-child {
+      margin-top: 0;
+    }
+    @include bp(medium) {
+      @include span(6);
+      margin-top: 0;
+      margin-right: span(1);
+      &:nth-child(3n) {
+        margin-right: 0;
+      }
+    }
+  }
+}
+
+.store--category-description {
+  max-width: 875px;
+}

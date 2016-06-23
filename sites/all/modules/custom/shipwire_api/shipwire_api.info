@@ -1,0 +1,7 @@
+name = Shipwire API
+description = API for Shipwire's new RESTful API
+core = 7.x
+
+dependencies[] = shipwire
+
+files[] = shipwire_api.inc

@@ -1,0 +1,62 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_deploy_enable() {
+  lulzbot_deploy_disable_modules();
+  lulzbot_deploy_configure_permissions();
+}
+
+/**
+ * Disable modules.
+ */
+function lulzbot_deploy_disable_modules() {
+  module_disable(array('overlay'));
+  if ($disable = variable_get('deploy_disable_modules')) {
+    module_disable($disable);
+  }
+}
+
+/**
+ * Configure permissions.
+ */
+function lulzbot_deploy_configure_permissions() {
+  $commerce_permissions = array(
+    'create commerce_customer_profile entities',
+    'edit own commerce_customer_profile entities',
+    'view own commerce_customer_profile entities',
+    'create commerce_customer_profile entities of bundle billing',
+    'edit own commerce_customer_profile entities of bundle billing',
+    'view own commerce_customer_profile entities of bundle billing',
+    'create commerce_customer_profile entities of bundle shipping',
+    'edit own commerce_customer_profile entities of bundle shipping',
+    'view own commerce_customer_profile entities of bundle shipping',
+    'access checkout',
+  );
+
+  $authenticated = user_role_load_by_name('authenticated user');
+  user_role_grant_permissions($authenticated->rid, $commerce_permissions);
+
+  $anonymous = user_role_load_by_name('anonymous user');
+  user_role_grant_permissions($anonymous->rid, array('access checkout'));
+}
+
+/**
+ * Reassign nodes from UID 2373 to UID 1
+ */
+function lulzbot_deploy_update_7000() {
+  db_update('node')
+    ->fields(array('uid' => 1))
+    ->condition('uid', '2373', '=')
+    ->execute();
+}
+
+/**
+ * Reassign nodes from UID 3201 to UID 1
+ */
+function lulzbot_deploy_update_7001() {
+  db_update('node')
+    ->fields(array('uid' => 1))
+    ->condition('uid', 20, '>')
+    ->execute();
+}

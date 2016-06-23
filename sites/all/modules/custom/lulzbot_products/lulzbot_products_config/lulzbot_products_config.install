@@ -1,0 +1,309 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_products_config_enable() {
+  lulzbot_products_config_create_fields();
+  lulzbot_products_config_set_view_mode();
+  // lulzbot_products_config_set_view_mode_fields();
+  // lulzbot_products_config_set_field_displays();
+
+  // apply display settings
+  module_invoke_all('cinc_display_apply');
+}
+
+/**
+ * Add internal part number field to all commerce_products.
+ */
+function lulzbot_products_config_update_7000(&$sandbox) {
+  lulzbot_products_config_create_fields();
+}
+
+/**
+ * Create product fields.
+ *
+ * Product fields are added here because the product types are described in
+ * the hook_commerce_product_type_info() hook in lulzbot_products.
+ */
+function lulzbot_products_config_create_fields() {
+  // Add the filament colors to the filament product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_filament_colors')
+    ->allow_vocab('filament_colors')
+    ->create_or_update()
+    ->set_instance('display.default.type', 'hidden')
+    ->set_instance('label', 'Colors')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Colors',
+    ))
+    ->create_or_update_instance_for('commerce_product', 'filament');
+
+  // Add the filament gauge to the filament product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_filament_gauge')
+    ->allow_vocab('filament_gauge')
+    ->create_or_update()
+    ->set_instance('display.default.type', 'hidden')
+    ->set_instance('label', 'Gauge/Width')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Gauge/Width',
+    ))
+    ->create_or_update_instance_for('commerce_product', 'filament');
+
+  // Add the filament weight to the filament product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_filament_weight')
+    ->allow_vocab('weight')
+    ->create_or_update()
+    ->set_instance('label', 'Weight')
+    ->set_instance('display.default.type', 'hidden')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Weight',
+    ))
+    ->create_or_update_instance_for('commerce_product', 'filament');
+
+  // add filament image.
+  CINC::init('ImageField')
+    ->machine_name('field_product_filament_image')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Images')
+    ->set_instance('display.node_feature.type', 'hidden')
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update_instance_for('commerce_product', 'filament');
+
+  // add the tshirt type field
+  CINC::init('ListTextField')
+    ->machine_name('field_product_tshirt_type')
+    ->set('settings.allowed_values', array('unisex' => 'Unisex', 'womens' => "Women's"))
+    ->create_or_update()
+    ->set_instance('display.default.type', 'hidden')
+    ->set_instance('label', 'T-Shirt Type')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Type',
+    ))
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update_instance_for('commerce_product', 'tshirt');
+
+  // Add the shirt colors to the tshirt product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_tshirt_colors')
+    ->allow_vocab('tshirt_colors')
+    ->create_or_update()
+    ->set_instance('label', 'Colors')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Color',
+    ))
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update_instance_for('commerce_product', 'tshirt');
+
+  // Add the shirt sizes to the tshirt product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_tshirt_sizes')
+    ->allow_vocab('tshirt_sizes')
+    ->create_or_update()
+    ->set_instance('label', 'Size')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Size',
+    ))
+    ->set_instance('display.default.type', 'hidden')
+    ->create_or_update_instance_for('commerce_product', 'tshirt');
+
+  // add tshirt image.
+  CINC::init('ImageField')
+    ->machine_name('field_product_tshirt_image')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Images')
+    ->set_instance('display.node_feature.type', 'hidden')
+    ->create_or_update_instance_for('commerce_product', 'tshirt');
+
+  // Add the printer power supply to the printer product type.
+  CINC::init('TermReferenceField')
+    ->machine_name('field_product_printer_power')
+    ->allow_vocab('printer_power')
+    ->create_or_update()
+    ->set_instance('label', 'Printer Power Supply')
+    ->set_instance('commerce_cart_settings', array(
+      'attribute_field' => TRUE,
+      'attribute_widget' => 'select',
+      'attribute_widget_title' => 'Printer Power Supply',
+    ))
+    ->create_or_update_instance_for('commerce_product', 'printer');
+
+  // add printer image.
+  CINC::init('ImageField')
+    ->machine_name('field_product_printer_image')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Images')
+    ->create_or_update_instance_for('commerce_product', 'printer');
+
+  // add parts image.
+  CINC::init('ImageField')
+    ->machine_name('field_product_part_image')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Images')
+    ->create_or_update_instance_for('commerce_product', 'part');
+
+  // add tool_head image.
+  CINC::init('ImageField')
+    ->machine_name('field_product_tool_head_image')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Images')
+    ->create_or_update_instance_for('commerce_product', 'tool_head');
+
+  // add product_number field
+  CINC::init('TextField')
+    ->machine_name('field_product_product_number')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Internal Part #')
+    ->create_or_update_instance_for('commerce_product', 'tool_head')
+    ->create_or_update_instance_for('commerce_product', 'tshirt')
+    ->create_or_update_instance_for('commerce_product', 'part')
+    ->create_or_update_instance_for('commerce_product', 'printer')
+    ->create_or_update_instance_for('commerce_product', 'filament');
+}
+
+/**
+ * Sets which fields show in which view modes.
+ */
+function lulzbot_products_config_set_view_mode_fields() {
+  // Printer
+  CINCDisplay::init('printer', 'default')
+    ->fields(array(
+      'field_printer_images',
+      'field_printer_ease_of_use',
+      'body',
+      'field_product_reference',
+      'field_printer_parts_specs1',
+      'field_printer_parts_specs2',
+      'field_printer_parts_specs3',
+      'field_printer_fc1_text',
+      'field_printer_fc1_description',
+      'field_printer_fc1_link',
+      'field_printer_fc2_image',
+      'field_printer_fc2_text',
+      'field_printer_fc2_description',
+      'field_printer_fc2_link',
+      'field_printer_fc2_rel_title',
+      'field_printer_fc2_products',
+      'field_printer_fc3_text',
+      'field_printer_fc3_description',
+      'field_printer_fc3_image',
+      'field_printer_fc3_video',
+      'field_printer_fc3_link',
+      'field_printer_reviews',
+      'field_printer_fc3_description',
+      'field_printer_fc3_description',
+    ))
+    ->update();
+
+  // Filament
+  CINCDisplay::init('filament', 'feature')
+    ->fields(array(
+      'field_product_reference',
+    ))
+    ->update();
+
+  CINCDisplay::init('filament', 'node_feature', 'commerce_product')
+    ->fields(array(
+      'commerce_price',
+    ))
+    ->update();
+}
+
+/**
+ * Sets custom field display settings.
+ */
+function lulzbot_products_config_set_field_displays() {
+
+
+
+  // see lulzbot_products_config_cinc_display_apply()
+
+  // Printer
+  // CINC::init('Field')->machine_name('field_printer_images')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.label', 'hidden')
+  //   ->set('display.default.type', 'photoswipe')
+  //   ->update();
+
+  // CINC::init('Field')->machine_name('field_printer_ease_of_use')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.label', 'hidden')
+  //   ->set('display.default.type', 'taxonomy_term_reference_plain')
+  //   ->update();
+
+  // CINC::init('Field')->machine_name('field_printer_reviews')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.type', 'field_collection_view')
+  //   ->set('display.default.settings.edit', '')
+  //   ->set('display.default.settings.delete', '')
+  //   ->set('display.default.settings.add', '')
+  //   ->update();
+  //
+  // CINC::init('Field')->machine_name('field_product_reference')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.settings.show_quantity', 1)
+  //   ->update();
+  //
+  // CINC::init('Field')->machine_name('field_printer_fc2_image')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.settings.image_style', 'feature2')
+  //   ->set('display.default.label', 'hidden')
+  //   ->update();
+  //
+  // CINC::init('Field')->machine_name('field_printer_fc2_products')
+  //   ->read_instance_for('node', 'printer')->instance
+  //   ->set('display.default.type', 'entityreference_entity_view')
+  //   ->set('display.default.settings.view_mode', 'feature')
+  //   ->update();
+
+  // Filament
+}
+
+/**
+ * Sets view modes enabled
+ */
+function lulzbot_products_config_set_view_mode() {
+
+  // Printer
+  $printer_settings = field_bundle_settings('node', 'printer');
+  $printer_settings['view_modes']['feature']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'printer', $printer_settings);
+
+  // Part
+  $part_settings = field_bundle_settings('node', 'part');
+  $part_settings['view_modes']['feature']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'part', $part_settings);
+  // Part product
+  $part_product_settings = field_bundle_settings('commerce_product', 'part');
+  $part_product_settings['view_modes']['feature']['custom_settings'] = TRUE;
+  field_bundle_settings('commerce_product', 'part', $part_product_settings);
+
+  // Tool head
+  $toolhead_settings = field_bundle_settings('node', 'tool_head');
+  $toolhead_settings['view_modes']['feature']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'tool_head', $toolhead_settings);
+
+  // Printer
+  $printer_settings = field_bundle_settings('node', 'printer');
+  $printer_settings['view_modes']['compare']['custom_settings'] = TRUE;
+  field_bundle_settings('node', 'printer', $printer_settings);
+}

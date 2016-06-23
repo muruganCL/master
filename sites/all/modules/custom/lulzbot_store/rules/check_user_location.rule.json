@@ -1,0 +1,11 @@
+{ "rules_lulzbot_check_user_location" : {
+    "LABEL" : "LulzBot Check User Location",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "lulzbot" ],
+    "REQUIRES" : [ "lulzbot_store", "commerce_stock" ],
+    "ON" : { "commerce_stock_check_add_to_cart_form_state" : [] },
+    "IF" : [ { "NOT lulzbot_store_user_has_location" : [] } ],
+    "DO" : [ { "lulzbot_store_disable_add_to_cart" : [] } ]
+  }
+}

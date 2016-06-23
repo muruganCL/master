@@ -1,0 +1,11 @@
+name = Normalized Migrate (NorMi)
+description = Auto-generates everything needed to migrate from a normalized database.
+package = Migration
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-08-25
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "normi"
+datestamp = "1408982333"
+

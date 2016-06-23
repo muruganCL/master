@@ -1,0 +1,11 @@
+//
+// Review items
+//
+
+.review {
+  @include review;
+}
+
+.reviews {
+  @include list--ruled(vrem(6), 'above');
+}

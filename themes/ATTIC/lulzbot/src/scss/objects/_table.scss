@@ -1,0 +1,104 @@
+//
+// Style for tables
+//
+// By default, table styles use the silent '%' syntax.
+// To use a class directly, change '%' to '.'
+//
+
+
+//
+// Bordered
+//
+%table--bordered {
+  border: 1px solid $clr-table-border;
+  border-collapse: separate; // Done so we can round those corners!
+  *border-collapse: collapsed; // IE7 can't round corners anyway
+  border-left: 0;
+
+  th,
+  td {
+    border-left: 1px solid $clr-table-border;
+  }
+
+  // Prevent a double border
+  caption + thead tr:first-child th,
+  caption + tbody tr:first-child th,
+  caption + tbody tr:first-child td,
+  colgroup + thead tr:first-child th,
+  colgroup + tbody tr:first-child th,
+  colgroup + tbody tr:first-child td,
+  thead:first-child tr:first-child th,
+  tbody:first-child tr:first-child th,
+  tbody:first-child tr:first-child td {
+    border-top: 0;
+  }
+}
+
+
+//
+// Condensed
+//
+%table--condensed {
+  th,
+  td {
+    padding: 4px 5px;
+  }
+}
+
+//
+// Striped
+//
+%table--striped {
+  // Default zebra-stripe styles (alternating gray and transparent backgrounds)
+  tbody {
+    tr:nth-child(odd) td,
+    tr:nth-child(odd) th {
+      background-color: $clr-table-odd;
+    }
+  }
+}
+
+
+//
+// Borderless
+//
+%table--borderless {
+  th,
+  td {
+    border: none;
+  }
+}
+
+
+//
+// Stacktable
+//
+.stacktable {
+  width: 100%;
+  border-bottom: 1px solid $clr-border;
+}
+.st-head-row { padding-top: 1em; }
+.st-head-row-main {
+  border-top: 0;
+}
+.st-key { width: 40%; text-align: left; padding-right: 1%; }
+.st-val {
+  width: 49%;
+  padding-left: 1%;
+  text-align: right;
+}
+
+
+/* RESPONSIVE EXAMPLE */
+.stacktable.large-only { display: none; }
+.stacktable.small-only { display: table; }
+.stacktable {
+  td {
+    border-top: 0;
+  }
+}
+
+@include bp(medium) {
+  .stacktable.large-only { display: table; }
+  .stacktable.small-only { display: none; }
+}

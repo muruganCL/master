@@ -1,0 +1,1 @@
+!function(e){Drupal.behaviors.commercePayment={attach:function(r,t){e("div.payment-redirect-form form",r).submit()}}}(jQuery);

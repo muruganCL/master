@@ -1,0 +1,101 @@
+//
+// Commerce Order review
+//
+
+.commerce_payment {
+  border: 0;
+  padding: 0;
+  margin-top: vrem(4);
+}
+
+.checkout-help {
+  margin-bottom: vrem(4);
+}
+
+.checkout_review {
+  .pane-title {
+    background-color: transparent;
+    td {
+      padding: 0;
+      padding-top: vrem(3);
+      border-top: 0;
+      background-color: transparent;
+      font-family: $ff-lato-black;
+      font-weight: $fw-medium;
+    }
+    + .pane-data > td {
+      border-top: 0;
+    }
+  }
+  .pane-data-full {
+    .form-item-label {
+      margin-bottom: 0;
+    }
+  }
+}
+
+#commerce-checkout-form-review {
+  select {
+    @include font-size(body--tiny);
+  }
+  .form-type-textfield {
+    input {
+      padding: vrem(1.45) vrem(2);
+    }
+  }
+}
+
+#payment-details {
+  margin-top: vrem(8);
+  padding-top: vrem(6);
+  @include rule(top);
+}
+
+.commerce_payment {
+  .select-wrapper {
+    display: inline-block;
+  }
+}
+
+.commerce-paypal-icons {
+  display: none;
+}
+
+.commerce-credit-card-expiration {
+  position: relative;
+
+  .select-wrapper,
+  select {
+    display: inline-block;
+    width: auto;
+  }
+
+  .commerce-month-year-divider {
+    position: absolute;
+    top: 40px;
+  }
+  .form-item-commerce-payment-payment-details-credit-card-exp-year {
+    margin-left: 18px;
+  }
+}
+
+#edit-commerce-payment-payment-method {
+  margin-top: vrem(2);
+}
+
+// Commerce overrides
+table.checkout-review .pane-title td {
+  padding-left: 0;
+}
+.commerce-paypal-icons .label {
+  font-family: $ff-lato-black;
+  font-weight: $fw-medium;
+}
+table.checkout-review {
+  tr:nth-of-type(2) {
+    .pane-data-full {
+      padding-left: 0;
+      padding-right: 0;
+    }
+  }
+}

@@ -1,0 +1,122 @@
+//
+// Basic page layout styles.
+//
+
+#main {
+  min-height: 400px;
+}
+#main-content {
+  margin-top: vrem(8);
+}
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.learn-promos {
+  > .view-content {
+    @include grid('.views-row', 3);
+    margin-bottom: vrem(8);
+
+    @include bp(medium) {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .promo {
+      min-height: 330px;
+    }
+
+    .views-row {
+      &:hover {
+        &:nth-child(3n+1) {
+          .promo-slideout {
+            z-index: 5;
+          }
+        }
+        &:nth-child(4n+1),
+        &:nth-child(7) {
+          .promo-image {
+            filter: grayscale(0);
+          }
+        }
+      }
+      &:nth-child(3n+1) {
+        .promo-slideout {
+          @include bp(large) {
+            left: initial;
+          }
+        }
+      }
+      &:nth-child(4n+1) {
+        .promo-image {
+          filter: grayscale(100%);
+          &:before {
+            background-color: rgba(#eeeeee, .8);
+          }
+        }
+      }
+      &:nth-child(4n+2) {
+        .promo-image {
+          &:before {
+            background-color: rgba($green, .8);
+          }
+        }
+      }
+      &:nth-child(4n+3) {
+        color: $white;
+        .promo-title,
+        .promo-type {
+          color: $white;
+        }
+        .promo-image {
+          &:before {
+            background-color: rgba($gray-black, .8);
+          }
+        }
+      }
+      &:nth-child(4n+4) {
+        .promo-title,
+        .promo-type {
+          color: $gray-darker;
+        }
+        .promo-image {
+          &:before {
+            background-color: rgba($green, .8);
+          }
+        }
+      }
+      &:nth-child(7n+4) {
+        color: $white;
+        .promo-title,
+        .promo-type {
+          color: $white;
+        }
+        .promo-image {
+          &:before {
+            background-color: rgba($gray-black, .8);
+          }
+        }
+      }
+      &:nth-child(7) {
+        .promo-title,
+        .promo-type {
+          color: $gray-darker;
+        }
+        .promo-image {
+          filter: grayscale(100%);
+          &:before {
+            background-color: rgba(#eeeeee, .8);
+          }
+        }
+      }
+    }
+  }
+}
+
+#block-views-learn-learn-block {
+  z-index: 1;
+}

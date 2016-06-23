@@ -1,0 +1,25 @@
+//
+// Video
+//
+
+.video-wrapper {
+  float: none;
+  clear: both;
+  width: 100%;
+  position: relative;
+  padding-bottom: 56.25%;
+  padding-top: 25px;
+  height: 0;
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.embedded-video {
+  padding: vrem(2);
+  border: 1px solid rgba($white, .5);
+}

@@ -1,0 +1,5 @@
+name = LulzBot Showcase
+description = LulzBot Showcase configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = cinc

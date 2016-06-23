@@ -1,0 +1,663 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_learn_enable() {
+  lulzbot_learn_create_content_types();
+  // lulzbot_learn_set_view_mode_fields();
+  lulzbot_learn_create_weight_field();
+  lulzbot_learn_create_announcement_fields();
+  lulzbot_learn_create_case_study_fields();
+  lulzbot_learn_create_event_fields();
+  lulzbot_learn_create_forum_post_fields();
+  lulzbot_learn_create_in_the_news_fields();
+  lulzbot_learn_create_tutorial_fields();
+  lulzbot_learn_set_variables();
+  lulzbot_learn_create_contexts();
+  lulzbot_learn_create_permissions();
+}
+
+/**
+ * Update announcement field display.
+ */
+function lulzbot_learn_update_7001(&$sandbox) {
+  module_invoke_all('cinc_display_apply');
+}
+
+/**
+ * Create weight field.
+ */
+function lulzbot_learn_create_weight_field() {
+
+  // front page weight
+  $weight = CINC::init('IntegerField')
+    ->machine_name('field_learn_weight')
+    ->create_or_update();
+  $weight
+    ->set_instance ('label', 'Front Page Weight')
+    ->set_instance ('description', 'The weight determines this node\'s order in relation to other nodes on the front page. The lighter the weight (smaller the number) the higher it rises to the top of the list.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'announcement')
+    ->create_or_update_instance_for('node', 'case_study')
+    ->create_or_update_instance_for('node', 'event')
+    ->create_or_update_instance_for('node', 'in_the_news')
+    ->create_or_update_instance_for('node', 'forum_post')
+    ->create_or_update_instance_for('node', 'tutorial');
+}
+
+/**
+ * Create announcement fields.
+ */
+function lulzbot_learn_create_announcement_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_announcement_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this announcement.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'announcement');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_announcement_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this announcement.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'announcement');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_announcement_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'announcement');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'announcement');
+  $body
+    ->read_instance_for('node', 'announcement')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->set_instance('widget.weight', 30)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_announcement_topics')
+    ->set('cardinality', -1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'announcement');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('announcement');
+  $general->add_fields(array($image, $introduction, $body, $topics))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create case study fields.
+ */
+function lulzbot_learn_create_case_study_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_case_study_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this case study.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'case_study');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_case_study_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this case study.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'case_study');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_case_study_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'case_study');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'case_study');
+  $body
+    ->read_instance_for('node', 'case_study')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->set_instance('widget.weight', 30)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_case_study_topics')
+    ->set('cardinality', -1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'case_study');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('case_study');
+  $general->add_fields(array($image, $introduction, $body, $topics))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create event fields.
+ */
+function lulzbot_learn_create_event_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_event_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this event.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'event');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_event_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this event.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'event');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_event_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'event');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'event');
+  $body
+    ->read_instance_for('node', 'event')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->set_instance('widget.weight', 30)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_event_topics')
+    ->set('cardinality', -1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'event');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('event');
+  $general->add_fields(array($introduction, $body, $topics))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create forum post fields.
+ */
+function lulzbot_learn_create_forum_post_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_forum_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this forum post.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'forum_post');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_forum_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this forum post.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'forum_post');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_forum_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'forum');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'forum_post');
+  $body
+    ->read_instance_for('node', 'forum_post')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->set_instance('widget.weight', 30)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_forum_post_topics')
+    ->set('cardinality', 1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'forum_post');
+
+  // product reference field
+  $product_ref = CINC::init('EntityReferenceField')
+    ->machine_name('field_forum_related_products')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'filament' => 'filament',
+          'merchandise' => 'merchandise',
+          'part' => 'part',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+        ),
+      )
+    )
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Related Product(s)')
+    ->set_instance('description', 'Selecting related products will list this forum post on the products\' corresponding documentation page.')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->set_instance('widget.weight', 50)
+    ->create_or_update_instance_for('node', 'forum_post');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('forum_post');
+  $general->add_fields(array($image, $introduction, $body, $topics))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create in the news fields.
+ */
+function lulzbot_learn_create_in_the_news_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_in_the_news_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this In the News article.')
+    ->create_or_update_instance_for('node', 'in_the_news');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_in_the_news_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this in the news.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'in_the_news');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_in_the_news_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'in_the_news');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'in_the_news');
+  $body
+    ->read_instance_for('node', 'in_the_news')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_in_the_news_topics')
+    ->set('cardinality', -1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'in_the_news');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('in_the_news');
+  $general->add_fields(array($image, $introduction, $body, $topics))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create tutorial fields.
+ */
+function lulzbot_learn_create_tutorial_fields() {
+
+  // image field
+  $image = CINC::init('ImageField')
+    ->machine_name('field_tutorial_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $image
+    ->set_instance('label', 'Teaser Image')
+    ->set_instance('description', 'Upload the image to display for the teaser view mode of this tutorial.')
+    ->create_or_update_instance_for('node', 'tutorial');
+
+  // Feature image field
+  $feature_image = CINC::init('ImageField')
+    ->machine_name('field_tutorial_feature_image')
+    ->set('cardinality', 1)
+    ->create_or_update();
+  $feature_image
+    ->set_instance('label', 'Feature Image')
+    ->set_instance('description', 'Upload the image to display as the feature image of this tutorial.')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'tutorial');
+
+  // introduction text
+  $introduction = CINC::init('LongTextField')
+    ->machine_name('field_tutorial_introduction')
+    ->create_or_update();
+  $introduction
+    ->set_instance('label', 'Introduction')
+    ->set_instance('description', 'This text will display at the top of the page.')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'tutorial');
+
+  // body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'tutorial');
+  $body
+    ->read_instance_for('node', 'tutorial')
+    ->set_instance('label', 'Body')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('settings.display_summary', 1)
+    ->instance->update();
+
+  // topics term reference field
+  $topics = CINC::init('TermReferenceField')
+    ->machine_name('field_tutorial_topics')
+    ->set('cardinality', -1)
+    ->allow_vocab('topics')
+    ->create_or_update();
+  $topics
+    ->set_instance('label', 'Topics')
+    ->set_instance('description', 'Set the relevant topics this page should be filterable by.')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'tutorial');
+
+  // product reference field
+  $product_ref = CINC::init('EntityReferenceField')
+    ->machine_name('field_tutorial_related_products')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'filament' => 'filament',
+          'merchandise' => 'merchandise',
+          'part' => 'part',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+        ),
+      )
+    )
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Related Product(s)')
+    ->set_instance('description', 'Selecting related products will list this tutorial on the products\' corresponding documentation page.')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'tutorial');
+
+  //
+  // FIELD GROUPS
+  //
+
+  // general field group
+  $general = lulzbot_learn_add_general_info_group('tutorial');
+  $general->add_fields(array($image, $introduction, $body, $topics, $product_ref))
+    ->set('weight', 10)
+    ->create_or_update();
+}
+
+/**
+ * Create content types.
+ */
+function lulzbot_learn_create_content_types() {
+  // Announcement content type
+  CINC::init('ContentType')
+    ->machine_name('announcement')
+    ->set('title_label', 'Announcement')
+    ->set('description', 'A LulzBot news item to display on the front page and Learn page.')
+    ->set('pathauto', 'learn/announcements/[node:title]')
+    ->create_or_update();
+
+  // Case Study content type
+  CINC::init('ContentType')
+    ->machine_name('case_study')
+    ->set('title_label', 'Case Study')
+    ->set('description', 'An in-depth look at how an organization is using LulzBot products.')
+    ->set('pathauto', 'learn/case-studies/[node:title]')
+    ->create_or_update();
+
+  // Event content type
+  CINC::init('ContentType')
+    ->machine_name('event')
+    ->set('title_label', 'Event')
+    ->set('description', 'An upcoming event to announce to the LulzBot community.')
+    ->set('pathauto', 'learn/events/[node:title]')
+    ->create_or_update();
+
+  // Forum Post content type
+  CINC::init('ContentType')
+    ->machine_name('forum_post')
+    ->set('title_label', 'Forum Post')
+    ->set('description', 'A post from the forums worth highlighting. This will display on the front page and Learn page.')
+    ->set('pathauto', 'learn/forum-posts/[node:title]')
+    ->create_or_update();
+
+  // In the News content type
+  CINC::init('ContentType')
+    ->machine_name('in_the_news')
+    ->set('title_label', 'In the News')
+    ->set('description', 'A summary of press coverage given to LulzBot')
+    ->set('pathauto', 'learn/in-the-news/[node:title]')
+    ->create_or_update();
+
+  // Tutorial content type
+  CINC::init('ContentType')
+    ->machine_name('tutorial')
+    ->set('title_label', 'Tutorial')
+    ->set('description', 'A post explaining how to do a particular task with a LulzBot product.')
+    ->set('node_options', 0)
+    ->set('pathauto', 'learn/tutorials/[node:title]')
+    ->create_or_update();
+}
+
+/**
+ * Add the general info group.
+ */
+function lulzbot_learn_add_general_info_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_general_info|node|' . $bundle . '|form')
+    ->set('label', 'General Information')
+    ->read();
+}
+
+/**
+ * Add the general info group.
+ */
+function lulzbot_learn_add_presentation_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_presentation|node|' . $bundle . '|form')
+    ->set('label', 'Presentation')
+    ->read();
+}
+
+/**
+ * Sets varaiables for learn content types
+ */
+function lulzbot_learn_set_variables() {
+  variable_set('node_submitted_in_the_news', FALSE);
+  variable_set('node_submitted_announcement', FALSE);
+  variable_set('node_submitted_forum_post', FALSE);
+  variable_set('node_submitted_event', FALSE);
+  variable_set('node_submitted_case_study', FALSE);
+  variable_set('node_submitted_tutorial', FALSE);
+}
+
+/**
+ * Creates learn contexts.
+ */
+function lulzbot_learn_create_contexts() {
+
+  //learn detail context
+  $learn_detail_context = CINC::init('Context')->machine_name('learn_detail');
+
+  if (!$learn_detail_context->exists()) {
+
+    $blocks = $learn_detail_context->read()->get('reactions.block.blocks');
+
+    $learn_detail_context
+      ->set('tag', 'page')
+      ->add_node_condition(['event', 'announcement', 'in_the_news', 'case_study', 'forum_post'])
+      ->create();
+
+    if (!isset($blocks['views-recent_news_block'])) {
+      $learn_detail_context
+        ->add_block_reaction('views', 'recent_news-block', 'sidebar_first', 1)
+        ->update();
+    }
+  }
+
+  // Learn Page
+  CINC::init('Context')->machine_name('learn')
+    ->set('tag', 'page')
+    ->add_path_condition(array('learn'))
+    ->add_block_reaction('views', 'learn-learn_block', 'content', 10)
+    ->create_or_update();
+}
+
+/**
+ * Add permissions.
+ */
+function lulzbot_learn_create_permissions() {
+  $roles = user_roles();
+  $permissions = array(
+    'guest writer' => array(
+      'create tutorial content',
+      'edit own tutorial content',
+      'delete own tutorial content',
+    ),
+    'content admin' => array(
+      'publish any content',
+      'unpublish any content',
+      'publish editable content',
+      'unpublish editable content',
+    ),
+  );
+
+  foreach ($roles as $rid => $role) {
+    if (isset($permissions[$role])) {
+      user_role_grant_permissions($rid, $permissions[$role]);
+    }
+  }
+}

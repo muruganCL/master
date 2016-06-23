@@ -1,0 +1,7 @@
+name = LulzBot Learn
+description = Learn configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = cinc
+dependencies[] = lulzbot_base
+dependencies[] = publishcontent

@@ -1,0 +1,1771 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_products_enable() {
+  lulzbot_products_delete_basic_product();
+  lulzbot_products_create_content_types();
+  lulzbot_products_create_reviews_fc();
+  lulzbot_products_create_alerts_fc();
+  lulzbot_products_create_part_fields();
+  lulzbot_products_create_printer_fields();
+  lulzbot_products_create_filament_fields();
+  lulzbot_products_create_tool_head_fields();
+  lulzbot_products_create_merchandise_fields();
+  lulzbot_products_create_radioactivity_field();
+  lulzbot_products_create_customer_profile_fields();
+  lulzbot_products_set_variables();
+}
+
+/**
+ * Add additional fields (features, parts included, specifications)
+ *
+ * Used for multiple content types.
+ *
+ * @see lulzbot_products_create_part_fields()
+ * @see lulzbot_products_create_tool_head_fields()
+ */
+function lulzbot_products_add_additional_fields($bundle) {
+  $additional_fields_details = array(
+    'field_' . $bundle . '_features' => 'Features',
+    'field_' . $bundle . '_specifications' => 'Parts & Specifications',
+    'field_' . $bundle . '_documentation' => 'Resources & Documentation',
+  );
+  $additional_fields = array();
+  $weight = 0;
+  foreach ($additional_fields_details as $machine_name => $label) {
+    $additional_fields[] = CINC::init('LongTextField')
+      ->machine_name($machine_name)
+      ->create_or_update()
+      ->set_instance('label', $label)
+      ->set_instance('settings', array(
+        'text_processing' => 1,
+      ))
+      ->set_instance('widget.weight', $weight)
+      ->create_or_update_instance_for('node', $bundle);
+    $weight += 10;
+  }
+
+  // delete this field.
+  CINC::init('Field')->machine_name('field_' . $bundle . '_parts_included')->read()->delete_and_purge();
+
+  return $additional_fields;
+}
+
+/**
+ * Add the additional info group.
+ */
+function lulzbot_products_add_additional_info_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_additional_info|node|' . $bundle . '|form')
+    ->set('label', 'Additional Information')
+    ->read();
+}
+
+/**
+ * Add the attributes group.
+ */
+function lulzbot_products_add_attributes_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_attributes|node|' . $bundle . '|form')
+    ->set('label', 'Attributes')
+    ->read();
+}
+
+/**
+ * Add the presentation group.
+ */
+function lulzbot_products_add_presentation_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_presentation|node|' . $bundle . '|form')
+    ->set('label', 'Presentation')
+    ->read();
+}
+
+/**
+ * Add the general info group.
+ */
+function lulzbot_products_add_general_info_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_general_info|node|' . $bundle . '|form')
+    ->set('label', 'General Information')
+    ->read();
+}
+
+/**
+ * Add the media group.
+ */
+function lulzbot_products_add_video_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_video|node|' . $bundle . '|form')
+    ->set('label', 'Video')
+    ->read();
+}
+
+/**
+ * Add Learn with the Community group.
+ */
+function lulzbot_products_add_learn_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_learn|node|' . $bundle . '|form')
+    ->set('label', 'Learn with the Community')
+    ->read();
+}
+
+/**
+ * Add the What People Are Saying group
+ */
+function lulzbot_products_add_people_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_people|node|' . $bundle . '|form')
+    ->set('label', 'What People Are Saying')
+    ->read();
+}
+
+/**
+ * Add the related products group
+ */
+function lulzbot_products_add_related_products_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_related_content|node|' . $bundle . '|form')
+    ->set('label', 'Related Content')
+    ->read();
+}
+
+/**
+ * Add Project showcase group
+ */
+function lulzbot_products_add_showcase_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_project_showcase|node|' . $bundle . '|form')
+    ->set('label', 'Project Showcase')
+    ->read();
+}
+
+/**
+ * Add alerts group
+ */
+function lulzbot_products_add_alerts_group($bundle) {
+  return CINC::init('FieldGroup')
+    ->machine_name('group_project_alerts|node|' . $bundle . '|form')
+    ->set('label', 'Alerts')
+    ->read();
+}
+/**
+ * Create content types.
+ */
+function lulzbot_products_create_content_types() {
+  // part content type
+  CINC::init('ContentType')
+    ->machine_name('part')
+    ->set('title_label', 'Part')
+    ->set('description', 'Parts include every component of a printer aside from the tool head.')
+    ->set('pathauto', 'store/parts/[node:title]')
+    ->create_or_update();
+
+  // tool-head content type
+  CINC::init('ContentType')
+    ->machine_name('tool_head')
+    ->set('title_label', 'Tool Head')
+    ->set('pathauto', 'store/tool-heads/[node:title]')
+    ->create_or_update();
+
+  // printer content type
+  CINC::init('ContentType')
+    ->machine_name('printer')
+    ->set('title_label', 'Printer')
+    ->set('pathauto', 'store/printers/[node:title]')
+    ->create_or_update();
+
+  // filament content type
+  CINC::init('ContentType')
+    ->machine_name('filament')
+    ->set('title_label', 'Filament')
+    ->set('pathauto', 'store/filament/[node:title]')
+    ->create_or_update();
+
+  // merchandise content type
+  CINC::init('ContentType')
+    ->machine_name('merchandise')
+    ->set('title_label', 'Merchandise')
+    ->set('pathauto', 'store/merchandise/[node:title]')
+    ->create_or_update();
+}
+
+/**
+ * Create filament content type fields.
+ */
+function lulzbot_products_create_filament_fields() {
+  // background triangle field
+  $background_triangle = CINC::init('BooleanField')
+    ->machine_name('field_filament_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // images field
+  $images = CINC::init('ImageField')
+    ->machine_name('field_filament_images')
+    ->set('cardinality', -1)
+    ->create_or_update();
+  $images
+    ->set_instance('label', 'Filament Images')
+    ->set_instance('description', 'Upload the images to display for the product page. Specific  filament colors will come from elsewhere. The first image will be the one to display on teaser view modes.')
+    ->set_instance('widget.weight', 0)
+    ->set_instance('settings.min_resolution', '600x400')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // video background image
+  $video_bg_image = CINC::init('ImageField')
+    ->machine_name('field_filament_video_bg_image')
+    ->create_or_update()
+    ->set_instance('label', 'Video Background Image')
+    ->set_instance('description', 'Upload a background image to display behind the video block.')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // Filament video
+  $video = CINC::init('VideoEmbedField')
+    ->machine_name('field_filament_video')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Filament Video')
+    ->set_instance('description', 'Past the url of a video from YouTube or Vimeo.')
+    ->create_or_update_instance_for('node', 'filament');
+
+  //video title
+  $video_title = CINC::init('TextField')
+    ->machine_name('field_filament_video_title')
+    ->create_or_update()
+    ->set_instance('label', 'Video Title')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'filament');
+
+  // video description
+  $video_description = CINC::init('LongTextField')
+    ->machine_name('field_filament_video_description')
+    ->create_or_update()
+    ->set_instance('label', 'Video Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'filament');
+
+  // add the body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'filament');
+  $body
+    ->read_instance_for('node', 'filament')
+    ->set_instance('label', 'Description')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 20)
+    ->instance->update();
+
+  // width field
+  $width = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_width')
+    ->set('cardinality', 1)
+    ->allow_vocab('width')
+    ->create_or_update()
+    ->set_instance('label', 'Width')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // weight field
+  $weight = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_weight')
+    ->set('cardinality', 1)
+    ->allow_vocab('weight')
+    ->create_or_update()
+    ->set_instance('label', 'Weight')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // supplier field
+  $supplier = CINC::init('LinkField')
+    ->machine_name('field_filament_supplier')
+    ->create_or_update()
+    ->set_instance('label', 'Supplier')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->create_or_update_instance_for('node', 'filament');
+
+  // applications field
+  $applications = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_applications')
+    ->set('cardinality', -1)
+    ->allow_vocab('ideal_applications')
+    ->create_or_update()
+    ->set_instance('label', 'Ideal Application(s)')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // ease of use term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_ease_of_use')
+    ->set('cardinality', 1)
+    ->allow_vocab('ease_of_use')
+    ->create_or_update()
+    ->set_instance('label', 'Ease of Use')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'filament');
+
+  $compatible = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_compatiblity')
+    ->set('cardinality', -1)
+    ->allow_vocab('filament_compatible')
+    ->create_or_update()
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('label', 'Compatible Printers/Tool Heads')
+    ->create_or_update_instance_for('node', 'filament');
+
+  $materials = CINC::init('TermReferenceField')
+    ->machine_name('field_filament_materials')
+    ->set('cardinality', -1)
+    ->allow_vocab('materials')
+    ->create_or_update()
+    ->set_instance('label', 'Material(s)')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'filament');
+
+  // certified field
+  CINC::init('Field')->machine_name('field_filament_certified')->delete_and_purge();
+
+  // additional information fields
+  CINC::init('Field')->machine_name('field_filament_documentation')->delete_and_purge();
+  $additional_fields = lulzbot_products_add_additional_fields('filament');
+
+  $learn_links = CINC::init('LinkField')
+    ->machine_name('field_filament_learning_links')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Learning Resource Link(s)')
+    ->set_instance('required', FALSE)
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->create_or_update_instance_for('node', 'filament');
+
+  // somehow tool head learning links are showing here, so remove those
+  CINC::init('Field')->machine_name('field_tool_head_learning_links')
+    ->read_instance_for('node', 'filament')
+    ->instance->delete();
+
+  $alternative = CINC::init('EntityReferenceField')
+    ->machine_name('field_filament_related_filaments')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'filament' => 'filament',
+        ),
+      )
+    )
+    ->set('cardinality', 4)
+    ->create_or_update()
+    ->set_instance('label', 'Alternative Filaments')
+    ->set_instance('description', 'Select four alternative filament products a customer could be interested in.')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'filament');
+
+  // filament reference
+  $product = CINC::init('CommerceProductReferenceField')
+    ->machine_name('field_product_reference')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->add_type('filament')
+    ->set_instance('label', 'Product Reference')
+    ->set_instance('description', 'Reference to the store product.')
+    ->set_instance('widget.type', 'inline_entity_form')
+    ->set_instance('widget.module', 'inline_entity_form')
+    ->set_instance('widget.settings.type_settings', array(
+      'allow_new' => 1,
+      'allow_existing' => 1,
+      'match_operator' => 'CONTAINS',
+      'delete_references' => 0,
+      'override_labels' => 0,
+      'label_singular' => 'product',
+      'label_plural' => 'products',
+      'autogenerate_title' => 0,
+    ))
+    ->create_or_update_instance_for('node', 'filament');
+
+  // reviews field collection
+  $reviews = CINC::init('FieldCollectionField')
+    ->machine_name('field_filament_reviews')
+    ->read()
+    ->read_instance_for('node', 'filament');
+
+  // showcase reference field
+  $showcase_ref = CINC::init('EntityReferenceField')
+    ->machine_name('field_filament_project_showcase')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'showcase' => 'showcase',
+        ),
+      )
+    )
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Showcase Item')
+    ->set_instance('description', 'Select showcase items relevant to this filament.')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'filament');
+
+  // alerts field collection
+  // @see lulzbot_products_create_alerts_fc()
+  $alerts = CINC::init('FieldCollectionField')
+    ->machine_name('field_filament_alerts')
+    ->read()
+    ->read_instance_for('node', 'filament');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  $presentation = lulzbot_products_add_presentation_group('filament');
+  $presentation->add_fields(array($background_triangle))
+    ->set('weight', 0)
+    ->create_or_update();
+
+  // general field group
+  $general = lulzbot_products_add_general_info_group('filament');
+  $general
+    ->add_fields(array($images, $body, $video))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  //video field group
+  $video_group = lulzbot_products_add_video_group('filament');
+  $video_group->add_fields(array($video_bg_image, $video, $video_title, $video_description))
+    ->set('weight', 15)
+    ->create_or_update();
+
+  // attributes group
+  $attributes = lulzbot_products_add_attributes_group('filament');
+  $attributes
+    ->add_fields(array(
+      $width,
+      $weight,
+      $supplier,
+      $applications,
+      $use,
+      $compatible,
+      $materials,
+    ))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // additional information
+  $additional = lulzbot_products_add_additional_info_group('filament');
+  $additional
+    ->add_fields($additional_fields)
+    ->set('weight', 30)
+    ->create_or_update();
+
+  $learn = lulzbot_products_add_learn_group('filament');
+  $learn
+    ->add_fields(array($learn_links))
+    ->set('weight', 40)
+    ->create_or_update();
+
+  // related content
+  $related = CINC::init('FieldGroup')
+    ->machine_name('group_related_content|node|filament|form')
+    ->set('label', 'Related Content')
+    ->read();
+  $related
+    ->add_fields(array($alternative, $product))
+    ->set('weight', 50)
+    ->create_or_update();
+
+  // what people are saying field group
+  $people = lulzbot_products_add_people_group('filament');
+  $people
+    ->add_fields(array($reviews))
+    ->set('weight', 55)
+    ->create_or_update();
+
+  // showcase field group
+  $showcase = CINC::init('FieldGroup')
+    ->machine_name('group_project_showcase|node|filament|form')
+    ->set('label', 'Project Showcase')
+    ->read();
+  $showcase
+    ->add_fields(array($showcase_ref))
+    ->set('weight', 60)
+    ->create_or_update();
+
+ // alerts field group
+  $alerts_group = lulzbot_products_add_alerts_group('filament');
+  $alerts_group
+    ->add_fields(array($alerts))
+    ->set('weight', 70)
+    ->create_or_update();
+}
+
+/**
+ * Create merchandise content type fields
+ */
+function lulzbot_products_create_merchandise_fields() {
+  // background triangle field
+  $background_triangle = CINC::init('BooleanField')
+    ->machine_name('field_merchandise_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // add the body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'merchandise');
+  $body
+    ->read_instance_for('node', 'merchandise')
+    ->set_instance('label', 'Description')
+    ->set_instance('settings.text_processing', 1)
+    ->instance->update();
+
+  // images
+  $images = CINC::init('ImageField')
+    ->machine_name('field_merchandise_images')
+    ->set('cardinality', -1)
+    ->create_or_update();
+  $images
+    ->set_instance('label', 'Product Images')
+    ->set_instance('description', 'The first image listed will be the main image displayed on the product page.')
+    ->set_instance('widget.weight', -10)
+    ->set_instance('settings.min_resolution', '600x400')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  $note_title = CINC::init('TextField')
+    ->machine_name('field_merchandise_note_title')
+    ->create_or_update()
+    ->set_instance('label', 'Note Title')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  $note_description = CINC::init('LongTextField')
+    ->machine_name('field_merchandise_note_body')
+    ->create_or_update()
+    ->set_instance('label', 'Note')
+    ->set_instance('widget.settings.rows', 5)
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // video background image
+  $video_bg_image = CINC::init('ImageField')
+    ->machine_name('field_merchandise_video_bg_image')
+    ->create_or_update()
+    ->set_instance('label', 'Video Background Image')
+    ->set_instance('description', 'Upload a background image to display behind the video block.')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // Filament video
+  $video = CINC::init('VideoEmbedField')
+    ->machine_name('field_merchandise_video')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Merchandise Video')
+    ->set_instance('description', 'Past the url of a video from YouTube or Vimeo.')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  //video title
+  $video_title = CINC::init('TextField')
+    ->machine_name('field_merchandise_video_title')
+    ->create_or_update()
+    ->set_instance('label', 'Video Title')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // video description
+  $video_description = CINC::init('LongTextField')
+    ->machine_name('field_merch_video_description')
+    ->create_or_update()
+    ->set_instance('label', 'Video Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // merchandise reference
+  $product = CINC::init('CommerceProductReferenceField')
+    ->machine_name('field_product_reference')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->add_type('tshirt')
+    ->set_instance('label', 'Product Reference')
+    ->set_instance('description', 'Reference to the store product.')
+    ->set_instance('widget.type', 'inline_entity_form')
+    ->set_instance('widget.module', 'inline_entity_form')
+    ->set_instance('widget.settings.type_settings', array(
+      'allow_new' => 1,
+      'allow_existing' => 1,
+      'match_operator' => 'CONTAINS',
+      'delete_references' => 0,
+      'override_labels' => 0,
+      'label_singular' => 'product',
+      'label_plural' => 'products',
+      'autogenerate_title' => 0,
+    ))
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  $alternative = CINC::init('EntityReferenceField')
+    ->machine_name('field_merchandise_related_prods')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'merchandise' => 'merchandise',
+          'part' => 'part',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+        ),
+      )
+    )
+    ->set('cardinality', 4)
+    ->create_or_update()
+    ->set_instance('label', 'Related products')
+    ->set_instance('description', 'Select four alternative products a customer could be interested in.')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  //learning  resources link field
+  $link_field = CINC::init('LinkField')
+    ->machine_name('field_merchandise_learning_links')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Learning Resource Link(s)')
+    ->set_instance('required', FALSE)
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  // reviews field collection
+  // @see lulzbot_products_create_reviews_fc()
+  $reviews = CINC::init('FieldCollectionField')
+    ->machine_name('field_merchandise_reviews')
+    ->read()
+    ->read_instance_for('node', 'merchandise');
+
+  // alerts field collection
+  // @see lulzbot_products_create_alerts_fc()
+  $alerts = CINC::init('FieldCollectionField')
+    ->machine_name('field_merchandise_alerts')
+    ->read()
+    ->read_instance_for('node', 'merchandise');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  $presentation = lulzbot_products_add_presentation_group('merchandise');
+  $presentation->add_fields(array($background_triangle))
+    ->set('weight', 0)
+    ->create_or_update();
+
+  // general field group
+  $general = lulzbot_products_add_general_info_group('merchandise');
+  $general->add_fields(array($images, $body))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  //video field group
+  $video_group = lulzbot_products_add_video_group('merchandise');
+  $video_group->add_fields(array($video_bg_image, $video, $video_title, $video_description))
+    ->set('weight', 15)
+    ->create_or_update();
+
+  // additional info group
+  $additional = lulzbot_products_add_additional_info_group('merchandise');
+  $additional->add_fields(array($note_title, $note_description))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // related content
+  $related = CINC::init('FieldGroup')
+    ->machine_name('group_related_content|node|merchandise|form')
+    ->set('label', 'Related Content')
+    ->read();
+  $related
+    ->add_fields(array($alternative, $product))
+    ->set('weight', 30)
+    ->create_or_update();
+
+  // community field group
+  $learn = lulzbot_products_add_learn_group('merchandise');
+  $learn->add_fields(array($link_field))
+    ->set('weight', 40)
+    ->create_or_update();
+
+  // what people are saying field group
+  $people = lulzbot_products_add_people_group('merchandise');
+  $people
+    ->add_fields(array($reviews))
+    ->set('weight', 50)
+    ->create_or_update();
+
+  // alerts field group
+  $alerts_group = lulzbot_products_add_alerts_group('merchandise');
+  $alerts_group
+    ->add_fields(array($alerts))
+    ->set('weight', 60)
+    ->create_or_update();
+}
+
+/**
+ * Create part content type fields.
+ */
+function lulzbot_products_create_part_fields() {
+  // background triangle field
+  $background_triangle = CINC::init('BooleanField')
+    ->machine_name('field_part_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'part');
+
+  // images
+  $images = CINC::init('ImageField')
+    ->machine_name('field_part_images')
+    ->set('cardinality', -1)
+    ->create_or_update();
+  $images
+    ->set_instance('label', 'Product Images')
+    ->set_instance('description', 'The first image listed will be the main image displayed on the product page.')
+    ->set_instance('settings.min_resolution', '600x400')
+    ->create_or_update_instance_for('node', 'part');
+
+  // add the body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'part');
+  $body
+    ->read_instance_for('node', 'part')
+    ->set_instance('label', 'Description')
+    ->set_instance('settings.text_processing', 1)
+    ->instance->update();
+
+  // ease of use term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_part_ease_of_use')
+    ->set('cardinality', 1)
+    ->allow_vocab('ease_of_use')
+    ->create_or_update();
+  $use
+    ->set_instance('label', 'Ease of Use')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'part');
+
+  // part type term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_part_part_types')
+    ->set('cardinality', 1)
+    ->allow_vocab('part_types')
+    ->create_or_update();
+  $use
+    ->set_instance('label', 'Part Type')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'part');
+
+  // compatible printers term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_part_compatible_printers')
+    ->set('cardinality', -1)
+    ->allow_vocab('part_compatible_printers')
+    ->create_or_update();
+  $use
+    ->set_instance('label', 'Compatible Printers')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'part');
+
+  // certified field
+  CINC::init('Field')->machine_name('field_part_certified')->delete();
+
+  // additional information fields
+  $additional_fields = lulzbot_products_add_additional_fields('part');
+
+  // link fields (and delete some old fields if they exist)
+  CINC::init('Field')->machine_name('field_part_doc_link')->delete();
+  CINC::init('Field')->machine_name('field_part_course_link')->delete();
+  CINC::init('Field')->machine_name('field_part_forum_link')->delete_and_purge();
+
+  $link_field = CINC::init('LinkField')
+    ->machine_name('field_part_learning_links')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Learning Resource Link(s)')
+    ->set_instance('required', FALSE)
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->create_or_update_instance_for('node', 'part');
+
+  // part suggestions
+  CINC::init('Field')->machine_name('field_part_suggestions')->delete_and_purge();
+  $related_products = CINC::init('EntityReferenceField')
+    ->machine_name('field_part_related_products')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'part' => 'part',
+          'filament' => 'filament',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+        ),
+      )
+    )
+    ->set('cardinality', 4)
+    ->create_or_update()
+    ->set_instance('label', 'Related products')
+    ->set_instance('description', 'Select four products that you suggest in place of this product.')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'part');
+
+  // part reference
+  $product = CINC::init('CommerceProductReferenceField')
+    ->machine_name('field_product_reference')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->add_type('part')
+    ->set_instance('label', 'Product Reference')
+    ->set_instance('widget.type', 'inline_entity_form')
+    ->set_instance('widget.module', 'inline_entity_form')
+    ->set_instance('widget.settings.type_settings', array(
+      'allow_new' => 1,
+      'allow_existing' => 1,
+      'match_operator' => 'CONTAINS',
+      'delete_references' => 0,
+      'override_labels' => 0,
+      'label_singular' => 'product',
+      'label_plural' => 'products',
+      'autogenerate_title' => 0,
+    ))
+    ->create_or_update_instance_for('node', 'part');
+
+  // video background image
+  $video_bg_image = CINC::init('ImageField')
+    ->machine_name('field_part_video_bg_image')
+    ->create_or_update()
+    ->set_instance('label', 'Video Background Image')
+    ->set_instance('description', 'Upload a background image to display behind the video block.')
+    ->create_or_update_instance_for('node', 'part');
+
+  //video embed field
+  $video = CINC::init('VideoEmbedField')
+    ->machine_name('field_part_video')
+    ->create_or_update()
+    ->set_instance('label', 'Part Video')
+    ->set_instance('description', 'Paste the url of a video from YouTube or Vimeo.')
+    ->create_or_update_instance_for('node', 'part');
+
+  //video title
+  $video_title = CINC::init('TextField')
+    ->machine_name('field_part_video_title')
+    ->create_or_update()
+    ->set_instance('label', 'Video Title')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'part');
+
+  // video description
+  $video_description = CINC::init('LongTextField')
+    ->machine_name('field_part_video_description')
+    ->create_or_update()
+    ->set_instance('label', 'Video Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'part');
+
+  // reviews field collection
+  $reviews = CINC::init('FieldCollectionField')
+    ->machine_name('field_part_reviews')
+    ->read()
+    ->read_instance_for('node', 'part');
+
+  // showcase reference field
+  $showcase_ref = CINC::init('EntityReferenceField')
+    ->machine_name('field_part_project_showcase')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'showcase' => 'showcase',
+        ),
+      )
+    )
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Project Showcase')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'part');
+
+  // alerts field collection
+  $alerts = CINC::init('FieldCollectionField')
+    ->machine_name('field_part_alerts')
+    ->read()
+    ->read_instance_for('node', 'part');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  $presentation = lulzbot_products_add_presentation_group('part');
+  $presentation->add_fields(array($background_triangle))
+    ->set('weight', 0)
+    ->create_or_update();
+
+  // general field group
+  $general = lulzbot_products_add_general_info_group('part');
+  $general->add_fields(array($images, $body))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  //video field group
+  $video_group = lulzbot_products_add_video_group('part');
+  $video_group->add_fields(array($video_bg_image, $video, $video_title, $video_description))
+    ->set('weight', 15)
+    ->create_or_update();
+
+  // attributes field group
+  $attributes = lulzbot_products_add_attributes_group('part');
+  $attributes->add_fields(array($use))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // additional info group
+  $additional = lulzbot_products_add_additional_info_group('part');
+  $additional->add_fields($additional_fields)
+    ->set('weight', 30)
+    ->create_or_update();
+
+  // community field group
+  $learn = lulzbot_products_add_learn_group('part');
+  $learn->add_fields(array($link_field))
+    ->set('weight', 40)
+    ->create_or_update();
+
+  // what people are saying field group
+  $people = lulzbot_products_add_people_group('part');
+  $people
+    ->add_fields(array($reviews))
+    ->set('weight', 50)
+    ->create_or_update();
+
+  // related content field group
+  $related = lulzbot_products_add_related_products_group('part');
+  $related->add_fields(array($related_products, $product))
+    ->set('weight', 60)
+    ->create_or_update();
+
+  // showcase field group
+  $showcase = lulzbot_products_add_showcase_group('part');
+  $showcase
+    ->add_fields(array($showcase_ref))
+    ->set('weight', 70)
+    ->create_or_update();
+
+  // alerts field group
+  $alerts_group = lulzbot_products_add_alerts_group('part');
+  $alerts_group
+    ->add_fields(array($alerts))
+    ->set('weight', 70)
+    ->create_or_update();
+}
+
+/**
+ * Create printer content type fields.
+ */
+function lulzbot_products_create_printer_fields() {
+  // background triangle field
+  $background_triangle = CINC::init('BooleanField')
+    ->machine_name('field_printer_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'printer');
+
+  // add the body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'printer');
+  $body
+    ->read_instance_for('node', 'printer')
+    ->set_instance('label', 'Description')
+    ->set_instance('settings.text_processing', 1)
+    ->set_instance('widget.weight', 0)
+    ->instance->update();
+
+  // images
+  $images = CINC::init('ImageField')
+    ->machine_name('field_printer_images')
+    ->set('cardinality', -1)
+    ->create_or_update();
+  $images
+    ->set_instance('label', 'Product Images')
+    ->set_instance('description', 'The first image listed will be the main image displayed on the product page.')
+    ->set_instance('widget.weight', -10)
+    ->set_instance('settings.min_resolution', '600x400')
+    ->create_or_update_instance_for('node', 'printer');
+
+  // ease of use term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_printer_ease_of_use')
+    ->set('cardinality', 1)
+    ->allow_vocab('ease_of_use')
+    ->create_or_update();
+  $use
+    ->set_instance('label', 'Ease of Use')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'printer');
+
+  // additional information fields, creates $parts1, $parts2, $parts3
+  // remove field_printer_parts_specs
+  CINC::init('Field')->machine_name('field_printer_parts_specs')->delete_and_purge();
+  for ($i = 1; $i <= 3; $i++) {
+    $parts = 'parts' . $i;
+    $$parts = CINC::init('LongTextField')
+      ->machine_name('field_printer_parts_specs' . $i)
+      ->create_or_update()
+      ->set_instance('label', 'Parts and specifications, Column ' . $i)
+      ->set_instance('settings', array(
+        'text_processing' => 1,
+      ))
+      ->create_or_update_instance_for('node', 'printer');
+  }
+
+  // remove field_printer_recommendations
+  CINC::init('Field')->machine_name('field_printer_recommendations')->delete_and_purge();
+
+  // part reference
+  $product = CINC::init('CommerceProductReferenceField')
+    ->machine_name('field_product_reference')
+    ->read_instance_for('node', 'printer')
+    ->add_type('printer')
+    ->set_instance('label', 'Product Reference')
+    ->set_instance('widget.type', 'inline_entity_form')
+    ->set_instance('widget.module', 'inline_entity_form')
+    ->set_instance('widget.settings.type_settings', array(
+      'allow_new' => 1,
+      'allow_existing' => 1,
+      'match_operator' => 'CONTAINS',
+      'delete_references' => 0,
+      'override_labels' => 0,
+      'label_singular' => 'product',
+      'label_plural' => 'products',
+      'autogenerate_title' => 0,
+    ))
+    ->create_or_update_instance_for('node', 'printer');
+
+  // reviews
+  $reviews = CINC::init('Field')->machine_name('field_printer_reviews')
+    ->read()
+    ->read_instance_for('node', 'printer');
+
+  // feature content 1
+  $fc1_image = CINC::init('ImageField')
+    ->machine_name('field_printer_fc1_image')
+    ->create_or_update()
+    ->set_instance('label', 'Image')
+    ->set_instance('widget.weight', 0)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc1_title = CINC::init('TextField')
+    ->machine_name('field_printer_fc1_text')
+    ->create_or_update()
+    ->set_instance('label', 'Title')
+    ->set_instance('widget.weight', 10)
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc1_description = CINC::init('LongTextField')
+    ->machine_name('field_printer_fc1_description')
+    ->create_or_update()
+    ->set_instance('label', 'Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc1_link = CINC::init('LinkField')
+    ->machine_name('field_printer_fc1_link')
+    ->create_or_update()
+    ->set_instance('label', 'Link')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->set_instance('widget.weight', 30)
+    ->create_or_update_instance_for('node', 'printer');
+
+  // feature content 2
+  $fc2_image = CINC::init('ImageField')
+    ->machine_name('field_printer_fc2_image')
+    ->create_or_update()
+    ->set_instance('label', 'Image')
+    ->set_instance('widget.weight', 0)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc2_title = CINC::init('TextField')
+    ->machine_name('field_printer_fc2_text')
+    ->create_or_update()
+    ->set_instance('label', 'Title')
+    ->set_instance('widget.weight', 10)
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc2_description = CINC::init('LongTextField')
+    ->machine_name('field_printer_fc2_description')
+    ->create_or_update()
+    ->set_instance('label', 'Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc2_link = CINC::init('LinkField')
+    ->machine_name('field_printer_fc2_link')
+    ->create_or_update()
+    ->set_instance('label', 'Link')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->set_instance('widget.weight', 30)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc2_related_title = CINC::init('TextField')
+    ->machine_name('field_printer_fc2_rel_title')
+    ->create_or_update()
+    ->set_instance('label', 'Related Products Title')
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc2_related = CINC::init('EntityReferenceField')
+    ->machine_name('field_printer_fc2_products')
+    ->set('cardinality', 2)
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'tool_head' => 'tool_head',
+          'part' => 'part',
+          'filament' => 'filament',
+        ),
+      )
+    )
+    ->create_or_update()
+    ->set_instance('label', 'Related Products')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->set_instance('widget.weight', 50)
+    ->create_or_update_instance_for('node', 'printer');
+
+  // feature content 3
+  $fc3_background_image = CINC::init('ImageField')
+    ->machine_name('field_printer_fc3_bg_image')
+    ->create_or_update()
+    ->set_instance('label', 'Background Image')
+    ->set_instance('widget.weight', 0)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc3_image = CINC::init('ImageField')
+    ->machine_name('field_printer_fc3_image')
+    ->create_or_update()
+    ->set_instance('label', 'Image')
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc3_video = CINC::init('VideoEmbedField')
+    ->machine_name('field_printer_fc3_video')
+    ->create_or_update()
+    ->set_instance('label', 'Video')
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc3_title = CINC::init('TextField')
+    ->machine_name('field_printer_fc3_text')
+    ->create_or_update()
+    ->set_instance('label', 'Title')
+    ->set_instance('widget.weight', 30)
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc3_description = CINC::init('LongTextField')
+    ->machine_name('field_printer_fc3_description')
+    ->create_or_update()
+    ->set_instance('label', 'Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->set_instance('widget.weight', 40)
+    ->create_or_update_instance_for('node', 'printer');
+  $fc3_link = CINC::init('LinkField')
+    ->machine_name('field_printer_fc3_link')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Links')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->set_instance('widget.weight', 50)
+    ->create_or_update_instance_for('node', 'printer');
+
+  // alerts field collection
+  $alerts = CINC::init('FieldCollectionField')
+    ->machine_name('field_printer_alerts')
+    ->read()
+    ->read_instance_for('node', 'printer');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  $presentation = lulzbot_products_add_presentation_group('printer');
+  $presentation->add_fields(array($background_triangle))
+    ->set('weight', 0)
+    ->create_or_update();
+
+  // general field group
+  $general = lulzbot_products_add_general_info_group('printer');
+  $general->add_fields(array($images, $body))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  // attributes group
+  $attributes = lulzbot_products_add_attributes_group('printer');
+  $attributes->add_fields(array($use))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // additional info group
+  $additional = lulzbot_products_add_additional_info_group('printer');
+  $additional->add_fields(array($parts1, $parts2, $parts3))
+    ->set('weight', 30)
+    ->create_or_update();
+
+  // related content field group
+  $related = CINC::init('FieldGroup')
+    ->machine_name('group_related_content|node|printer|form')
+    ->set('label', 'Related Content')
+    ->read();
+  $related->add_fields(array($product))
+    ->set('weight', 40)
+    ->create_or_update();
+
+  // Awards and Praise field group
+  $awards = CINC::init('FieldGroup')
+    ->machine_name('group_awards|node|printer|form')
+    ->set('label', 'Awards and Praise')
+    ->read();
+  $awards
+    ->add_fields(array($reviews))
+    ->set('weight', 50)
+    ->create_or_update();
+
+  $feature1 = CINC::init('FieldGroup')
+    ->machine_name('group_feature1|node|printer|form')
+    ->set('label', 'Feature Content 1')
+    ->read();
+  $feature1->add_fields(array(
+    $fc1_image,
+    $fc1_title,
+    $fc1_description,
+    $fc1_link,
+  ))
+    ->set('weight', 60)
+    ->create_or_update();
+
+  $feature2 = CINC::init('FieldGroup')
+    ->machine_name('group_feature2|node|printer|form')
+    ->set('label', 'Feature Content 2')
+    ->read();
+  $feature2->add_fields(array(
+    $fc2_image,
+    $fc2_title,
+    $fc2_description,
+    $fc2_link,
+    $fc2_related_title,
+    $fc2_related,
+  ))
+    ->set('weight', 70)
+    ->create_or_update();
+
+  $feature3 = CINC::init('FieldGroup')
+    ->machine_name('group_feature3|node|printer|form')
+    ->set('label', 'Feature Content 3')
+    ->read();
+  $feature3->add_fields(array(
+    $fc3_background_image,
+    $fc3_image,
+    $fc3_video,
+    $fc3_title,
+    $fc3_description,
+    $fc3_link,
+  ))
+    ->set('weight', 80)
+    ->create_or_update();
+
+  // alerts field group
+  $alerts_group = lulzbot_products_add_alerts_group('printer');
+  $alerts_group
+    ->add_fields(array($alerts))
+    ->set('weight', 90)
+    ->create_or_update();
+}
+
+/**
+ * Create a shared radioactivity field for all product content types.
+ */
+function lulzbot_products_create_radioactivity_field() {
+  CINC::init('RadioactivityField')
+    ->machine_name('field_radioactivity')
+    ->create_or_update()
+    ->set_instance('settings.profile', 'basic_decay_profile')
+    ->set_instance('widget.profile', 'basic_decay_profile')
+    ->set_instance('label', 'Popularity')
+    ->set_instance('description', 'Tracks popularity of this product display.')
+    ->create_or_update_instance_for('node', 'filament')
+    ->create_or_update_instance_for('node', 'merchandise')
+    ->create_or_update_instance_for('node', 'part')
+    ->create_or_update_instance_for('node', 'printer')
+    ->create_or_update_instance_for('node', 'tool_head');
+}
+
+/**
+ * Create the reviews field collection.
+ *
+ * Used on multiple content types.
+ */
+function lulzbot_products_create_reviews_fc() {
+  // reviews field collection
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_filament_reviews')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Reviews')
+    ->create_or_update_instance_for('node', 'filament');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_merchandise_reviews')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Reviews')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_part_reviews')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Reviews')
+    ->create_or_update_instance_for('node', 'part');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_tool_head_reviews')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Reviews')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_printer_reviews')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Reviews')
+    ->create_or_update_instance_for('node', 'printer');
+
+  // review field: quote
+  CINC::init('LongTextField')
+    ->machine_name('field_review_quote')
+    ->create_or_update()
+    ->set_instance('label', 'Quote')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.rows', 5)
+    ->set_instance('settings', array(
+      'text_processing' => 0,
+    ))
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_reviews');
+
+  // review field: name
+  CINC::init('TextField')
+    ->machine_name('field_review_name')
+    ->create_or_update()
+    ->set_instance('label', 'Name')
+    ->set_instance('required', TRUE)
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_reviews');
+
+  // review field: title
+  CINC::init('TextField')
+    ->machine_name('field_review_title')
+    ->create_or_update()
+    ->set_instance('label', 'Publication Name')
+    ->set_instance('required', TRUE)
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_reviews');
+
+  // review field: logo
+  CINC::init('ImageField')
+    ->machine_name('field_review_image')
+    ->create_or_update()
+    ->set_instance('label', 'Publication Logo')
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_reviews')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_reviews');
+}
+
+/**
+ * Create the alerts field collection.
+ *
+ * Used on multiple content types.
+ */
+function lulzbot_products_create_alerts_fc() {
+  // reviews field collection
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_merchandise_alerts')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Alert Messages')
+    ->create_or_update_instance_for('node', 'merchandise');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_filament_alerts')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Alert Messages')
+    ->create_or_update_instance_for('node', 'filament');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_part_alerts')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Alert Messages')
+    ->create_or_update_instance_for('node', 'part');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_tool_head_alerts')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Alert Messages')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  CINC::init('FieldCollectionField')
+    ->machine_name('field_printer_alerts')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Alert Messages')
+    ->create_or_update_instance_for('node', 'printer');
+
+  // alert field: name
+  CINC::init('TextField')
+    ->machine_name('field_alert_name')
+    ->create_or_update()
+    ->set_instance('label', 'Name')
+    ->set_instance('required', TRUE)
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_alerts');
+
+  // alert field: message
+  CINC::init('LongTextField')
+    ->machine_name('field_alert_message')
+    ->create_or_update()
+    ->set_instance('label', 'Alert Message')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.rows', 5)
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('field_collection_item', 'field_merchandise_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_filament_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_part_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_printer_alerts')
+    ->create_or_update_instance_for('field_collection_item', 'field_tool_head_alerts');
+}
+
+/**
+ * Create tool head content type fields.
+ */
+function lulzbot_products_create_tool_head_fields() {
+  // background triangle field
+  $background_triangle = CINC::init('BooleanField')
+    ->machine_name('field_tool_head_bg_triangle')
+    ->create_or_update()
+    ->set_instance('label', 'Background Triangle')
+    ->set_instance('description', 'Check this to include the triangle in the background.')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // add the body field/description
+  $body = CINC::init('Field')->machine_name('body')
+    ->create_or_update_instance_for('node', 'tool_head');
+  $body
+    ->read_instance_for('node', 'tool_head')
+    ->set_instance('label', 'Description')
+    ->set_instance('settings.text_processing', 1)
+    ->instance->update();
+
+  // images
+  $images = CINC::init('ImageField')
+    ->machine_name('field_tool_head_images')
+    ->set('cardinality', -1)
+    ->create_or_update();
+  $images
+    ->set_instance('label', 'Product Images')
+    ->set_instance('description', 'The first image listed will be the main image displayed on the product page.')
+    ->set_instance('widget.weight', -10)
+    ->set_instance('settings.min_resolution', '600x400')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // ease of use term reference field
+  $use = CINC::init('TermReferenceField')
+    ->machine_name('field_tool_head_ease_of_use')
+    ->set('cardinality', 1)
+    ->allow_vocab('ease_of_use')
+    ->create_or_update();
+  $use
+    ->set_instance('label', 'Ease of Use')
+    ->set_instance('widget.type', 'options_buttons')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  $compatible = CINC::init('TermReferenceField')
+    ->machine_name('field_tool_head_compatiblity')
+    ->set('cardinality', -1)
+    ->allow_vocab('tool_head_compatible')
+    ->create_or_update()
+    ->set_instance('widget.type', 'options_buttons')
+    ->set_instance('label', 'Compatible Printers/Tool Heads')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // video background image
+  $video_bg_image = CINC::init('ImageField')
+    ->machine_name('field_th_video_bg_image')
+    ->create_or_update()
+    ->set_instance('label', 'Video Background Image')
+    ->set_instance('description', 'Upload a background image to display behind the video block.')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // Filament video
+  $video = CINC::init('VideoEmbedField')
+    ->machine_name('field_tool_head_video')
+    ->set('cardinality', 1)
+    ->create_or_update()
+    ->set_instance('label', 'Merchandise Video')
+    ->set_instance('description', 'Past the url of a video from YouTube or Vimeo.')
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  //video title
+  $video_title = CINC::init('TextField')
+    ->machine_name('field_tool_head_video_title')
+    ->create_or_update()
+    ->set_instance('label', 'Video Title')
+    ->set_instance('settings.text_processing', 1)
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // video description
+  $video_description = CINC::init('LongTextField')
+    ->machine_name('field_th_video_description')
+    ->create_or_update()
+    ->set_instance('label', 'Video Description')
+    ->set_instance('settings', array(
+      'text_processing' => 1,
+    ))
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // certified field (REMOVED)
+  CINC::init('Field')->machine_name('field_tool_head_certified')->delete_and_purge();
+
+  // additional fields (features, specs, etc.)
+  $additional_fields = lulzbot_products_add_additional_fields('tool_head');
+
+  $link_field = CINC::init('LinkField')
+    ->machine_name('field_tool_head_learning_links')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Learning Resource Link(s)')
+    ->set_instance('required', FALSE)
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // reviews field collection
+  // @see lulzbot_products_create_reviews_fc()
+  $reviews = CINC::init('FieldCollectionField')
+    ->machine_name('field_tool_head_reviews')
+    ->read()
+    ->read_instance_for('node', 'tool_head');
+
+  // part suggestions
+  CINC::init('Field')->machine_name('field_part_suggestions')->delete_and_purge();
+  $related_products = CINC::init('EntityReferenceField')
+    ->machine_name('field_tool_head_related_products')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'part' => 'part',
+          'printer' => 'printer',
+          'tool_head' => 'tool_head',
+          'filament' => 'filament',
+        ),
+      )
+    )
+    ->set('cardinality', 4)
+    ->create_or_update()
+    ->set_instance('label', 'Related products')
+    ->set_instance('description', 'Select four products that you suggest in place of this product.')
+    ->set_instance('required', TRUE)
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // part reference
+  $product = CINC::init('CommerceProductReferenceField')
+    ->machine_name('field_product_reference')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->add_type('tool_head')
+    ->set_instance('label', 'Product Reference')
+    ->set_instance('widget.type', 'inline_entity_form')
+    ->set_instance('widget.module', 'inline_entity_form')
+    ->set_instance('widget.settings.type_settings', array(
+      'allow_new' => 1,
+      'allow_existing' => 1,
+      'match_operator' => 'CONTAINS',
+      'delete_references' => 0,
+      'override_labels' => 0,
+      'label_singular' => 'product',
+      'label_plural' => 'products',
+      'autogenerate_title' => 0,
+    ))
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // showcase reference field
+  $showcase_ref = CINC::init('EntityReferenceField')
+    ->machine_name('field_tool_head_project_showcase')
+    ->set('settings.handler_settings', array(
+        'target_bundles' => array(
+          'showcase' => 'showcase',
+        ),
+      )
+    )
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Related Projects')
+    ->set_instance('description', 'Select community projects that relate to this part.')
+    ->set_instance('widget.settings.references_dialog_edit', 1)
+    ->set_instance('widget.settings.references_dialog_add', 1)
+    ->create_or_update_instance_for('node', 'tool_head');
+
+  // alerts field collection
+  $alerts = CINC::init('FieldCollectionField')
+    ->machine_name('field_tool_head_alerts')
+    ->read()
+    ->read_instance_for('node', 'tool_head');
+
+  //
+  // FIELD GROUPS
+  //
+  // presentation field group
+  $presentation = lulzbot_products_add_presentation_group('tool_head');
+  $presentation->add_fields(array($background_triangle))
+    ->set('weight', 0)
+    ->create_or_update();
+
+  // general field group
+  $general = lulzbot_products_add_general_info_group('tool_head');
+  $general->add_fields(array($images, $body))
+    ->set('weight', 10)
+    ->create_or_update();
+
+  //video field group
+  $video_group = lulzbot_products_add_video_group('tool_head');
+  $video_group->add_fields(array($video_bg_image, $video, $video_title, $video_description))
+    ->set('weight', 15)
+    ->create_or_update();
+
+  // attributes group
+  $attributes = lulzbot_products_add_attributes_group('tool_head');
+  $attributes->add_fields(array($use, $compatible))
+    ->set('weight', 20)
+    ->create_or_update();
+
+  // additional info group
+  $additional = lulzbot_products_add_additional_info_group('tool_head');
+  $additional->add_fields($additional_fields)
+    ->set('weight', 30)
+    ->create_or_update();
+
+  $learn = lulzbot_products_add_learn_group('tool_head');
+  $learn
+    ->add_fields(array($link_field))
+    ->set('weight', 40)
+    ->create_or_update();
+
+  // what people are saying field group
+  $people = lulzbot_products_add_people_group('tool_head');
+  $people
+    ->add_fields(array($reviews))
+    ->set('weight', 50)
+    ->create_or_update();
+
+  $related = lulzbot_products_add_related_products_group('tool_head');
+  $related->add_fields(array($related_products, $product))
+    ->set('weight', 60)
+    ->create_or_update();
+
+  // showcase field group
+  $showcase = lulzbot_products_add_showcase_group('tool_head');
+  $showcase
+    ->add_fields(array($showcase_ref))
+    ->set('weight', 70)
+    ->create_or_update();
+
+  // alerts field group
+  $alerts_group = lulzbot_products_add_alerts_group('tool_head');
+  $alerts_group
+    ->add_fields(array($alerts))
+    ->set('weight', 80)
+    ->create_or_update();
+}
+
+/**
+ * Delete the basic commerce product ui product type.
+ */
+function lulzbot_products_delete_basic_product() {
+  if (module_exists('commerce_product_ui')) {
+    // delete the product ui basic product type
+    db_delete('commerce_product_type')
+      ->condition('type', 'product', '=')
+      ->execute();
+  }
+}
+
+/**
+ * Add fields to the customer profiles
+ */
+function lulzbot_products_create_customer_profile_fields() {
+  CINC::init('TelephoneField')->machine_name('field_customer_phone')
+    ->create_or_update()
+    ->set_instance('label', 'Telephone')
+    ->set_instance('required', TRUE)
+    ->create_or_update_instance_for('commerce_customer_profile', 'billing')
+    ->create_or_update_instance_for('commerce_customer_profile', 'shipping');
+
+  CINC::init('TelephoneField')->machine_name('field_shipping_phone')
+    ->delete_and_purge();
+  CINC::init('TelephoneField')->machine_name('field_billing_phone')
+    ->delete_and_purge();
+}
+
+/**
+ * Sets varaiables for products
+ */
+function lulzbot_products_set_variables() {
+  variable_set('node_submitted_printer', FALSE);
+  variable_set('node_submitted_filament', FALSE);
+  variable_set('node_submitted_merchandise', FALSE);
+  variable_set('node_submitted_part', FALSE);
+  variable_set('commerce_customer_profile_shipping_addressbook', TRUE);
+  variable_set('commerce_customer_profile_billing_addressbook', TRUE);
+  variable_set('commerce_customer_profile_billing_profile_copy', TRUE);
+  variable_set('commerce_customer_profile_billing_profile_copy_default', TRUE);
+  variable_set('commerce_customer_profile_billing_profile_copy_source', 'shipping');
+}

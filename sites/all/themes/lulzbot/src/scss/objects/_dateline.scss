@@ -1,0 +1,9 @@
+//
+// Dateline styles.
+//
+
+.dateline {
+  .title + & {
+    margin-top: vrem(6);
+  }
+}

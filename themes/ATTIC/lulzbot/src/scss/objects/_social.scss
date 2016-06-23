@@ -1,0 +1,130 @@
+//
+// Social icons
+//
+
+.social-icons {
+  margin-top: 0;
+  padding-left: 0;
+
+  > li {
+    list-style-type: none;
+    float: left;
+    margin-top: 0;
+    margin-left: vrem(1.5);
+    &:first-child {
+      margin-left: 0;
+    }
+  }
+  a {
+    display: inline-block;
+    background-position: 0 100%;
+    opacity: 1;
+    transition: opacity .3s ease-in-out;
+    &:hover {
+      opacity: .6;
+    }
+  }
+  .facebook {
+    width: 8px;
+    height: 18px;
+  }
+  .linkedin {
+    width: 15px;
+    height: 18px;
+  }
+  .twitter {
+    width: 18px;
+    height: 18px;
+  }
+  .youtube {
+    width: 18px;
+    height: 18px;
+  }
+  .google-plus {
+    width: 17px;
+    height: 18px;
+  }
+  .envelope {
+    width: 16px;
+    height: 17px;
+  }
+}
+
+#social-media-links {
+  display: none;
+  position: absolute;
+  left: -66px;
+  top: 50%;
+  padding-left: 0;
+  margin-top: -16px;
+  min-height: 33px;
+  list-style: none;
+  background-color: $green;
+  &[aria-expanded="true"] {
+    display: block;
+  }
+  &[aria-expanded="false"] {
+    display: none;
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    right: -5px;
+    top: 50%;
+    margin-top: -4px;
+    border-left: 5px solid $green;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+  }
+  li {
+    display: inline-block;
+    margin-top: 0;
+    line-height: 0;
+  }
+  a {
+    display: inline-block;
+    padding: 14px 15px;
+    margin-bottom: 2px;
+    background-position: 50%;
+    vertical-align: middle;
+    opacity: 1;
+    transition: opacity .3s ease-in-out;
+    &:hover {
+      opacity: .6;
+    }
+  }
+  .facebook {
+    width: 8px;
+    height: 17px;
+    padding-right: 10px;
+  }
+  .twitter {
+    width: 18px;
+    height: 15px;
+  }
+  &.toggle-right {
+    right: -66px;
+    left: inherit;
+
+    &:after {
+      margin-top: -5px;
+      left: -5px;
+      right: initial;
+      border-left: 0;
+      border-right: 5px solid $green;
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+  }
+}
+
+.share--wrapper {
+  position: relative;
+  display: inline-block;
+  margin-top: vrem(2);
+  float: right;
+
+  @include bp(medium) {
+    float: none;
+  }
+}

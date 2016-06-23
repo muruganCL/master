@@ -1,0 +1,9 @@
+name = Commerce Piwik
+description = Integrated Drupal Commerce with Piwik
+package = Commerce
+core = 7.x
+
+dependencies[] = piwik
+dependencies[] = entity
+dependencies[] = libraries
+dependencies[] = commerce_checkout

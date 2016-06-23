@@ -1,0 +1,1 @@
+function namespace(){var n,e,r,t=arguments,l=null;for(n=0;n<t.length;n+=1)for(r=t[n].split("."),l=window,e=0;e<r.length;e+=1)l[r[e]]=l[r[e]]||{},l=l[r[e]];return l}

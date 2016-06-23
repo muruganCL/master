@@ -1,0 +1,17 @@
+{ "commerce_checkout_order_status_update" : {
+    "LABEL" : "Update the order status on checkout completion",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "Commerce Checkout" ],
+    "REQUIRES" : [ "commerce_order", "commerce_checkout" ],
+    "ON" : { "commerce_checkout_complete" : [] },
+    "DO" : [
+      { "commerce_order_update_state" : { "commerce_order" : [ "commerce-order" ], "order_state" : "pending" } },
+      { "commerce_order_update_status" : {
+          "commerce_order" : [ "commerce_order" ],
+          "order_status" : "pending_verification"
+        }
+      }
+    ]
+  }
+}

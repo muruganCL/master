@@ -1,0 +1,32 @@
+//
+// Related Products
+//
+
+.related-products {
+  .field-items {
+    .heading--link-text {
+      margin-bottom: vrem(1);
+    }
+    > li {
+      &:first-child:last-child {
+        margin-top: vrem(4);
+      }
+      @include bp(medium) {
+        &:nth-child(3n) {
+          clear: left;
+        }
+        &:nth-child(-n+2) {
+          padding-top: 0;
+          border-top: 0;
+        }
+        &:nth-of-type(odd) {
+          @include span(4.5 at 1 of 10);
+        }
+        &:nth-of-type(even) {
+          @include span(4.5 at 6.5 of 10);
+          float: none;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,134 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_home_enable() {
+  lulzbot_home_create_bean_types();
+  lulzbot_home_create_beans();
+  lulzbot_home_create_content_types();
+  lulzbot_home_create_marquee_fields();
+  lulzbot_home_create_contexts();
+  lulzbot_home_set_variables();
+}
+
+
+/**
+ * Creates store bean types.
+ */
+function lulzbot_home_create_bean_types() {
+  // Main call to action bean type
+  CINC::init('BeanType')
+    ->machine_name('main_call_to_action')
+    ->read()
+    ->set('label', 'Main Call to Action')
+    ->create_or_update()
+    ->allow_view_access(array('anonymous user', 'authenticated user', 'administrator'));
+
+  // Add background image field
+  CINC::init('ImageField')
+    ->machine_name('field_main_cta_image')
+    ->read()
+    ->create_or_update()
+    ->set_instance('label', 'Background Image')
+    ->set_instance('description', 'Upload a lifestyle image. Minimum 1500px wide')
+    ->set_instance('widget.weight', 10)
+    ->set_instance('display.settings.image_style', 'extra_large')
+    ->create_or_update_instance_for('bean', 'main_call_to_action');
+
+  // Add main text field
+  CINC::init('LongTextField')
+    ->machine_name('field_main_cta_text')
+    ->read()
+    ->create_or_update()
+    ->set_instance('label', 'Main Text')
+    ->set_instance('description', 'Enter a one to two sentence call to action.')
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('bean', 'main_call_to_action');
+
+  // Add link field
+  CINC::init('LinkField')
+  ->machine_name('field_main_cta_link')
+  ->read()
+  ->create_or_update()
+  ->set_instance('label', 'Link')
+  ->set_instance('settings', array(
+    'title' => 'required',
+  ))
+  ->set_instance('widget.weight', 30)
+  ->create_or_update_instance_for('bean', 'main_call_to_action');
+}
+
+/**
+ * Create beans.
+ */
+function lulzbot_home_create_beans() {
+  if (module_exists('homepage-home-cta')) {
+    CINC::init('Bean')
+    ->machine_name('homepage-home-cta')
+    ->set('type', 'main_call_to_action')
+    ->create_or_update();
+  }
+}
+
+/**
+ * Create content types.
+ */
+function lulzbot_home_create_content_types() {
+  // marquee content type
+  CINC::init('ContentType')
+    ->machine_name('marquee')
+    ->set('title_label', 'Marquee')
+    ->set('description', 'Promotional content that is displayed in the first section of the home page.')
+    ->create_or_update();
+}
+
+function lulzbot_home_create_marquee_fields() {
+  // image field
+  CINC::init('ImageField')
+    ->machine_name('field_marquee_image')
+    ->create_or_update()
+    ->set_instance('label', 'Marquee Image')
+    ->set_instance('description', 'Help text to be updated at a later date.')
+    ->set_instance('widget.weight', 0)
+    ->set_instance('display.default.settings.image_style', 'extra_large')
+    ->create_or_update_instance_for('node', 'marquee');
+
+  // body field
+  CINC::init('Field')
+    ->machine_name('body')
+    ->read()
+    ->set_instance('widget.weight', 10)
+    ->create_or_update_instance_for('node', 'marquee');
+
+  // links field
+  CINC::init('LinkField')
+    ->machine_name('field_marquee_links')
+    ->set('cardinality', -1)
+    ->create_or_update()
+    ->set_instance('label', 'Link(s)')
+    ->set_instance('description', 'For the title, enter the text you would like to display. In most cases the URL should be a relative path to an internal page such as <em>printers</em>.')
+    ->set_instance('settings', array(
+      'title' => 'required',
+    ))
+    ->set_instance('widget.weight', 20)
+    ->create_or_update_instance_for('node', 'marquee');
+}
+
+function lulzbot_home_create_contexts() {
+  // Home Page
+  CINC::init('Context')->machine_name('home')
+    ->set('tag', 'page')
+    ->add_path_condition(array('<front>'))
+    ->add_block_reaction('views', 'marquee-marquee_block', 'content', 1)
+    ->add_block_reaction('bean', 'homepage-home-cta', 'content', 2)
+    ->add_block_reaction('views', 'homepage_news-block', 'content', 3)
+    ->create_or_update();
+}
+
+/**
+ * Sets varaiables for home content types
+ */
+function lulzbot_home_set_variables() {
+  variable_set('node_submitted_marquee', FALSE);
+  variable_set('site_frontpage', 'home');
+}

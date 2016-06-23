@@ -1,0 +1,1 @@
+!function(t){t(document).ready(function(){t.ajax({type:"POST",cache:!1,url:Drupal.settings.statistics.url,data:Drupal.settings.statistics.data})})}(jQuery);

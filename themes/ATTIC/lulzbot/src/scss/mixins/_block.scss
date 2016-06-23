@@ -1,0 +1,8 @@
+//
+// Block mixins, blocks of text
+//
+
+@mixin block-background($color: $gray-lightest) {
+  padding: vrem(5);
+  background-color: $color;
+}

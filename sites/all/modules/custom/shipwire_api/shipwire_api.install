@@ -1,0 +1,57 @@
+<?php
+/**
+ * Implements hook_uninstall().
+ */
+function shipwire_api_uninstall() {
+  variable_del('shipwire_api_debug');
+}
+
+/**
+ * Implements hook_schema().
+ */
+function shipwire_api_schema() {
+  return array(
+    'cache_shipwire_api' => drupal_get_schema_unprocessed('system', 'cache'),
+    'shipwire_api_errors' => array(
+      'fields' => array(
+        'id' => array(
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'commerce_order_number' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'message' => array(
+          'type' => 'text',
+          'size' => 'medium',
+        ),
+        'error_date' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+      ),
+      'primary key' => array('id'),
+    ),
+  );
+}
+
+/**
+ * Add shipwire_api_errors table.
+ */
+function shipwire_api_update_7001() {
+  db_create_table('shipwire_api_errors', drupal_get_schema_unprocessed('shipwire_api', 'shipwire_api_errors'));
+}
+
+/**
+ * Add the error_date column.
+ */
+function shipwire_api_update_7002() {
+  $schema = drupal_get_schema_unprocessed('shipwire_api', 'shipwire_api_errors');
+  if (!db_field_exists('shipwire_api_errors', 'error_date')) {
+    db_add_field('shipwire_api_errors', 'error_date', $schema['fields']['error_date']);
+  }
+}

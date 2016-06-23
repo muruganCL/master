@@ -1,0 +1,5 @@
+name = Italics Text Filter
+description = A simple text filter for italic text
+core = 7.x
+
+dependencies[] = filter

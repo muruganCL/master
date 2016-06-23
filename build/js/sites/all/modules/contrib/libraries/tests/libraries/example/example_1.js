@@ -1,0 +1,1 @@
+!function(s){Drupal.behaviors.librariesTest={attach:function(e,t){s(".libraries-test-module-js").text("If this text shows up, example_1.js was loaded successfully.")}}}(jQuery);

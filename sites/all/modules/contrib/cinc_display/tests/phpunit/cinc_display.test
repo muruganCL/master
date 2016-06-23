@@ -1,0 +1,141 @@
+<?php
+/**
+ * Test CINCDisplay
+ */
+
+require 'cinc_display.inc';
+
+/**
+ * Test CINCDisplay functions that do not rely on Drupal.
+ */
+class TestCINCDisplay extends PHPUnit_Framework_TestCase {
+
+  /**
+   * Test defaults with the same tests between versions.
+   *
+   * @see testSetDefaults()
+   * @see testSetDefaultsBeforePhp53()
+   */
+  public function defaultsTest($display) {
+    // setting nothing should return defaults
+    $settings = $display->setDefaults(array());
+    $this->assertTrue(is_array($settings));
+    $this->assertTrue(isset($settings['label']));
+    $this->assertEquals('hidden', $settings['label']);
+
+    // setting something should override defaults
+    $settings = $display->setDefaults(array('label' => 'above'));
+    $this->assertEquals('above', $settings['label']);
+
+    $display->defaultSettings['settings']['abc'] = 123;
+    $settings = array('settings' => array('cvb' => 456));
+    $settings = $display->setDefaults($settings);
+    $this->assertTrue(isset($settings['settings']));
+    $this->assertTrue(isset($settings['settings']['cvb']));
+    $this->assertTrue(isset($settings['settings']['abc']));
+  }
+  /**
+   * Test that default settings work appropriately
+   */
+  public function testSetDefaults() {
+    $display = new CINCDisplay('example');
+    $this->defaultsTest($display);
+  }
+
+  /**
+   * Test setDefaults() without PHP 5.3
+   */
+  public function testSetDefaultsBeforePhp53() {
+    $display = new CINCDisplay('example');
+    $display->debugPHPMode = TRUE;
+    $this->defaultsTest($display);
+  }
+
+  /**
+   * Test adding a field
+   */
+  public function testAddField() {
+    $display = new CINCDisplay('example');
+    $this->assertEquals(0, count($display->settings));
+
+    $display->field('field_example');
+    $this->assertEquals(1, count($display->settings));
+    $this->assertTrue(isset($display->settings['field_example']));
+    $this->assertEquals($display->defaultSettings, $display->settings['field_example']);
+
+    $display->field('field_example', 'text_summary_or_trimmed');
+    $this->assertEquals('text_summary_or_trimmed', $display->settings['field_example']['type']);
+
+    $display->field('field_example', 'text_trimmed');
+    $this->assertEquals('text_trimmed', $display->settings['field_example']['type']);
+    $this->assertEquals('text', $display->settings['field_example']['module']);
+
+    $display->field('field_example', 'text_summary_or_trimmed', array('some_setting' => 123));
+    $this->assertEquals('text_summary_or_trimmed', $display->settings['field_example']['type']);
+    $this->assertEquals(123, $display->settings['field_example']['some_setting']);
+
+    $display->field('field_example', 'image.image_image', array('some_setting' => 123));
+    $this->assertEquals('image_image', $display->settings['field_example']['type']);
+    $this->assertEquals('image', $display->settings['field_example']['module']);
+    $this->assertEquals(123, $display->settings['field_example']['some_setting']);
+  }
+
+  /**
+   * Test adding fields
+   */
+  public function testAddFields() {
+    $display = new CINCDisplay('example');
+    $this->assertEquals(0, count($display->settings));
+
+    $display->fields(array('field_example', 'field_example2'));
+    $this->assertEquals(2, count($display->settings));
+  }
+
+  /**
+   * Test adding fields and the weight increment
+   */
+  public function testAddingMultipleFieldsIncrementsWeight() {
+    $display = new CINCDisplay('example');
+    $this->assertEquals(0, count($display->settings));
+
+    $display->field('field_example');
+    $this->assertEquals(0, $display->settings['field_example']['weight']);
+
+    $display->field('field_example2');
+    $this->assertEquals(0, $display->settings['field_example']['weight']);
+    $this->assertEquals(1, $display->settings['field_example2']['weight']);
+  }
+
+  /**
+   * Test hide()
+   */
+  public function testHide() {
+    $display = new CINCDisplay('example');
+    $display->hide('field_example');
+    $this->assertEquals(1, count($display->settings));
+    $this->assertEquals('hidden', $display->settings['field_example']['type']);
+  }
+
+  /**
+   * Test set()
+   */
+  public function testSetValues() {
+    $display = new CINCDisplay('example');
+    $display->field('field_example')
+      ->set('field_example', 'type', 'options_select');
+    $this->assertEquals('options_select', $display->settings['field_example']['type']);
+
+    $display->set('field_example', array('type' => 'entityreference_autocomplete', 'module' => 'entityreference'));
+    $this->assertEquals('entityreference_autocomplete', $display->settings['field_example']['type']);
+  }
+
+  /**
+   * Test the image style shortcut
+   */
+  public function testSetImageStyle() {
+    $display = new CINCDisplay('example');
+    $display->field('field_image', 'image.image_image')
+      ->setImageStyle('field_image', 'medium');
+    $this->assertEquals('medium', $display->settings['field_image']['settings']['image_style']);
+  }
+}

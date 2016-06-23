@@ -1,0 +1,25 @@
+//
+// Alerts
+//
+
+#alert {
+  margin-bottom: vrem(4);
+  color: $white;
+  background-color: $gray-darker;
+  > div {
+    padding: 0 vrem(4) vrem(4);
+  }
+  .alert-title {
+    margin-bottom: vrem(1);
+  }
+
+  .list--ruled {
+    > li {
+      border-top-color: rgba($white, .2);
+    }
+  }
+}
+
+.alert-count {
+  font-family: $ff-lato-regular;
+}

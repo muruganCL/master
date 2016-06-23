@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function shipwire_webhooks_menu() {
+  $items = array();
+  $items['admin/shipwire/settings/webhooks'] = array(
+    'title' => 'Webhooks',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shipwire_webhooks_admin'),
+    'access arguments' => array('administer shipwire webhooks'),
+    'file' => 'shipwire_webhooks.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10
+  );
+  
+  $items['admin/shipwire/settings/webhooks/add'] = array(
+    'title' => 'Add Webhooks',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shipwire_webhooks_admin_add'),
+    'access arguments' => array('administer shipwire webhooks'),
+    'file' => 'shipwire_webhooks.admin.inc',
+  );
+
+  $items['admin/shipwire/settings/webhook_secrets'] = array(
+    'title' => 'Webhook Secret Keys',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shipwire_webhooks_secrets_admin'),
+    'access arguments' => array('administer shipwire webhook secrets'),
+    'file' => 'shipwire_webhooks.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20
+  );
+
+  $items['admin/shipwire/settings/webhook_secrets/add'] = array(
+    'title' => 'Add Secret Keys',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shipwire_webhooks_secrets_admin_add'),
+    'access arguments' => array('administer shipwire webhook secrets'),
+    'file' => 'shipwire_webhooks.admin.inc',
+  );
+
+  $items['admin/shipwire/settings/webhook_secrets/delete/%'] = array(
+    'title' => 'Delete Secret Keys',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('shipwire_webhooks_secrets_admin_delete', 5),
+    'access arguments' => array('administer shipwire webhook secrets'),
+    'file' => 'shipwire_webhooks.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function shipwire_webhooks_permission() {
+  return array(
+    'administer shipwire webhooks' => array(
+      'title' => t('Administer Shipwire Webhooks'),
+      'description' => t('Add and delete Shipwire webhooks'),
+    ),
+    'administer shipwire webhook secrets' => array(
+      'title' => t('Administer Shipwire Webhook Secrets'),
+      'description' => t('Add and delete Shipwire webhook secret keys'),
+    ),
+  );
+}
+
+/**
+ * Return a list of secrets.
+ */
+function shipwire_webhooks_get_secrets() {
+  shipwire_webhooks_update_secrets();
+
+  return db_select('shipwire_webhooks_secrets', 's')
+    ->fields('s')
+    ->execute()
+    ->fetchAllAssoc('id', PDO::FETCH_ASSOC);
+}
+
+/**
+ * Get webhooks.
+ */
+function shipwire_webhooks_get_webhooks() {
+  shipwire_webhooks_update_webhooks();
+
+  return db_select('shipwire_webhooks', 'w')
+    ->fields('w')
+    ->execute()
+    ->fetchAllAssoc('id', PDO::FETCH_ASSOC);
+}
+
+/**
+ * Update secrets, if needed.
+ *
+ * @param bool $force
+ *   Force refresh of secrets. Off by default.
+ */
+function shipwire_webhooks_update_secrets($force = FALSE) {
+  $updated = variable_get('shipwire_webhooks_secrets_updated', NULL);
+  if ($force) {
+    $updated = NULL;
+  }
+
+  // if we have not gotten the secrets or it has been an hour...
+  if (!$updated || $updated < strtotime('-1 hour')) {
+    $shipwire = shipwire_api_request();
+    $response = $shipwire->secret();
+
+    foreach ($response->resource->items as $item) {
+      db_merge('shipwire_webhooks_secrets')
+        ->key(array('id' => $item->resource->id))
+        ->fields(array(
+          'id' => $item->resource->id,
+          'secret' => $item->resource->secret,
+        ))
+        ->execute();
+    }
+    variable_set('shipwire_webhooks_secrets_updated', time());
+  }
+}
+
+/**
+ * Update webhooks, if needed.
+ *
+ * @param bool $force
+ *   Force refresh of webhooks. Off by default.
+ */
+function shipwire_webhooks_update_webhooks($force = FALSE) {
+  $updated = variable_get('shipwire_webhooks_updated', NULL);
+  if ($force) {
+    $updated = NULL;
+  }
+
+  if (!$updated || $updated < strtotime('-1 hour')) {
+    $shipwire = shipwire_api_request();
+    $response = $shipwire->webhooks();
+
+    foreach ($response->resource->items as $item) {
+      db_merge('shipwire_webhooks')
+        ->key(array('id' => $item->id))
+        ->fields(array(
+          'id' => $item->id,
+          'topic' => $item->topic,
+          'url' => $item->url,
+        ))
+        ->execute();
+    }
+    variable_set('shipwire_webhooks_updated', time());
+  }
+}

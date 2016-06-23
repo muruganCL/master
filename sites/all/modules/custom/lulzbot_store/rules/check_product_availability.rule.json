@@ -1,0 +1,14 @@
+{ "rules_lulzbot_check_product_availability" : {
+    "LABEL" : "LulzBot Check Product Availability",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "lulzbot" ],
+    "REQUIRES" : [ "lulzbot_store", "commerce_stock" ],
+    "ON" : { "commerce_stock_check_add_to_cart_form_state" : [] },
+    "IF" : [
+      { "lulzbot_store_user_has_location" : [] },
+      { "NOT lulzbot_store_product_available" : { "commerce_product" : [ "commerce_product" ] } }
+    ],
+    "DO" : [ { "lulzbot_store_show_unavailable" : [] } ]
+  }
+}

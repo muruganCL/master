@@ -1,0 +1,1 @@
+!function(a){Drupal.behaviors.chartsHighcharts={},Drupal.behaviors.chartsHighcharts.attach=function(h,t){a(".charts-highchart").once("charts-highchart",function(){if(a(this).attr("data-chart")){var h=a.parseJSON(a(this).attr("data-chart"));a(this).highcharts(h)}})}}(jQuery);

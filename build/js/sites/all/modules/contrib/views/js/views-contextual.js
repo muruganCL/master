@@ -1,0 +1,1 @@
+!function(n){Drupal.behaviors.viewsContextualLinks={attach:function(t){n(".views-contextual-links-page",t).closest(':has(".view"):not("body")').addClass("contextual-links-region")}}}(jQuery);

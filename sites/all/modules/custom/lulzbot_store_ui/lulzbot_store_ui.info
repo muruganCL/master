@@ -1,0 +1,4 @@
+name = Lulzbot Store UI Modifications
+description = Various discrete items to clean up commerce UX
+core = 7.x
+project = Custom

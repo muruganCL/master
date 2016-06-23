@@ -1,0 +1,69 @@
+//
+// Page layout styles.
+//
+
+@import "basic";
+@import "home";
+@import "products";
+@import "printer";
+@import "image-callout";
+@import "printer-comparison";
+@import "store";
+@import "cart";
+@import "checkout";
+@import "shipping";
+@import "order-review";
+@import "order";
+
+.l--constrained-small {
+  @include box--constrained($w-full-small);
+}
+
+
+// Set the page width.
+.l--constrained {
+  @include box--constrained;
+}
+
+.l--constrained-large {
+  @include box--constrained($w-full-large);
+}
+
+.l--bleed {
+  @include box--bleed;
+}
+
+section {
+  @include clearfix;
+}
+
+#tabs {
+  margin-bottom: vrem(6);
+}
+
+#main {
+  padding-top: 62px; // Height of mobile header
+  position: relative;
+  // padding-top: vrem(36);
+
+  @include bp(small) {
+    padding-top: 82px; // Height of header
+  }
+
+  @include bp(large) {
+    padding-top: 175px; // Height of header
+  }
+}
+
+.sidebar-first {
+  #content {
+    @include bp(large) {
+      @include span(13 at 1);
+    }
+  }
+  #sidebar-first {
+    @include bp(large) {
+      @include span(6 at 15);
+    }
+  }
+}

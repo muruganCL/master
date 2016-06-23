@@ -1,0 +1,8 @@
+name = CINC Commerce
+description = Config in Code for Drupal Commerce
+core = 7.x
+
+dependencies[] = cinc
+dependencies[] = commerce_product_reference
+
+files[] = includes/cinc_commerce.commerce_product_reference_field.inc

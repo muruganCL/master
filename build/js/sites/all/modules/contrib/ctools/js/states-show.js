@@ -1,0 +1,1 @@
+!function(e){"use strict";Drupal.states.State.aliases.hidden="!show",e(document).bind("state:show",function(t){if(t.trigger){var s=e(t.target).closest(".form-item, .form-submit, .form-wrapper");s.toggle(t.value),t.value===!0?s.removeClass("element-invisible"):s.addClass("element-invisible")}})}(jQuery);

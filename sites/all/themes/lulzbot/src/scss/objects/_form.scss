@@ -1,0 +1,239 @@
+//
+// Form component.
+//
+// Ideally we would be sticking to .form-item, .form-item-label and
+// .form-item-description, but we need to make some allowances for drupal's
+// default markup.
+//
+
+input[type="submit"],
+button {
+  @include button;
+  @include button--medium;
+  @include button--primary;
+}
+
+.form-item {
+  margin: 0;
+}
+
+.form-actions {
+  margin: vrem(4) 0 0;
+}
+
+.form-item + .form-item {
+  margin-top: vrem(2);
+}
+
+.form-item-description {
+  margin-top: vrem(1);
+  margin-bottom: vrem(2);
+  @include adjust-font-size-to($fs-xs);
+  font-family: $ff-sans;
+}
+
+.form-item-label {
+  display: block;
+  margin-bottom: vrem(1);
+  margin-top: vrem(2);
+  @include font-size(body--tiny);
+  font-family: $ff-lato-regular;
+  color: $gray-black;
+}
+
+
+//
+// Fieldsets
+//
+fieldset {
+  display: table-cell;
+  margin: vrem(4) 0 0;
+  max-width: 100%;
+  min-width: 0;
+
+  @include bp(medium) {
+    display: inherit;
+    max-width: inherit;
+  }
+}
+
+.fieldset-legend {
+  font-family: $ff-lato-black;
+  font-weight: $fw-medium;
+  @include font-size(heading--small);
+}
+
+.fieldset-description {
+  @include adjust-font-size-to($fs-s);
+  margin-bottom: rhythm(4, $fs-s);
+  font-family: $ff-sans;
+}
+
+
+//
+// Autocomplete
+//
+html.js input.form-autocomplete {
+  background-position: 100% 6px;
+
+  &.throbbing {
+    background-position: 100% -14px;
+  }
+}
+
+//
+// Selects
+//
+.select-wrapper {
+  margin-top: vrem(1);
+  z-index: 0;
+  overflow: hidden;
+  position: relative;
+  background-color: $white;
+  &:before {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    z-index: -1;
+    margin-top: -8px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid $green;
+    border-bottom: 2px solid $green;
+    transform: rotate(45deg);
+
+    transition: all .3s ease-in-out;
+
+    @include bp(small) {
+      right: 17px;
+    }
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    display: inline-block;
+    right: 30px;
+    top: 10px;
+    bottom: 10px;
+    border-left: 1px solid $green;
+
+    @include bp(small) {
+      right: 42px;
+    }
+  }
+
+  .ie9 & {
+    &:before,
+    &:after {
+      display: none;
+    }
+  }
+}
+select {
+  width: 100%;
+  padding-top: vrem(1.5);
+  padding-bottom: vrem(1.5);
+  padding-right: vrem(8);
+  padding-left: vrem(2);
+  border: 1px solid $gray-lighter;
+  background-color: transparent;
+  border-radius: 0;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  .node-printer & {min-height: 50px;}
+}
+
+
+//
+// Checkboxes and Radios
+//
+
+// Since these are groups of related form-items, we reduce the spacing a bit.
+.form-type-checkboxes .form-type-checkbox,
+.form-type-radios .form-type-radio,
+.bef-select-as-checkboxes .form-type-bef-checkbox {
+  margin: rhythm(1) 0;
+
+  > label {
+    font-family: $ff-lato-regular;
+    @include font-size(body--tiny);
+  }
+}
+
+.form-type-radio {
+  > label {
+    display: inline-block;
+    margin-left: vrem(1);
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+// Color selector (for Filaments)
+.form-type-filament-colors {
+  @include clearfix;
+  clear: both;
+  padding-top: vrem(1);
+
+  .filament-colors {
+    @include color-selector;
+  }
+}
+
+//
+// Errors
+//
+input.error,
+textarea.error,
+select.error {
+  border: 2px solid red;
+}
+
+
+//
+// Machine Names
+//
+.machine-name-label {
+  font-family: $ff-sans;
+  font-weight: bold;
+}
+
+.machine-name-value {
+  font-family: $ff-mono;
+  margin: 0 .5em;
+}
+
+
+//
+// Required
+//
+.form-required,
+.marker {
+  color: $clr-error;
+  font-weight: bold;
+}
+
+
+//
+// Vertical Tabs
+//
+
+// These are based on the FAPI vertical tab markup which is different than the
+//  nav component.
+// @todo See if consolidating these is feasible.
+// @todo Consolidate these styles with core's vertical-tabs.css
+.vertical-tab-button {
+  position: relative;
+  font-family: $ff-sans;
+}
+
+// Setting the active tab by id assumes only one set of vertical tabs per page.
+// @todo Change #active-vertical-tab to .active-vertical-tab
+#active-vertical-tab {
+  // Removes the ackward box outline on :focus
+  top: 0;
+}

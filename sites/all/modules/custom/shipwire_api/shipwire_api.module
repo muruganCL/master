@@ -1,0 +1,401 @@
+<?php
+
+/**
+ * Get a shipwire instance.
+ *
+ * Loads a Shipwire API instance for making calls against the API.
+ */
+function shipwire_api_request() {
+  module_load_include('inc', 'shipwire_api');
+  return new ShipwireAPI();
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function shipwire_api_flush_caches() {
+  return array('cache_shipwire_api');
+}
+
+/**
+ * Clear all cache for a specific API subset.
+ */
+function shipwire_api_flush_api_cache($api) {
+  db_delete('cache_shipwire_api')
+    ->condition('cid', db_like($api . '_') . '%', 'LIKE')
+    ->execute();
+}
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ *
+ * Define shipwire API shipping methods for Commerce.
+ */
+function shipwire_api_commerce_shipping_method_info() {
+  return array(
+    'shipwire_api' => array(
+      'title' => t('Shipwire API'),
+      'description' => t('Provides automated fulfillment using the Shipwire service.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ *
+ * Define shipping methods. Currently this is just a copy of the functionality
+ * form the Shipwire module, changed for this module.
+ */
+function shipwire_api_commerce_shipping_service_info() {
+  $shipping_services = array();
+
+  $methods = Shipwire::getShippingMethods();
+  $services = shipwire_api_method_service_map();
+  foreach ($methods as $method => $title) {
+    $machine_name = $services[$method];
+    $shipping_services[$machine_name] = array(
+      'title' => $title,
+      'shipping_method' => 'shipwire_api',
+      'price_component' => 'shipping',
+      'callbacks' => array(
+        'rate' => 'shipwire_api_rates',
+        'details_form' => 'shipwire_api_rates_details_form',
+      ),
+    );
+  }
+
+  return $shipping_services;
+}
+
+/**
+ * Callback for shipwire rates.
+ *
+ * Uses hook_shipwire_api_get_rates_for_order() and
+ * hook_shipwire_api_rates_data_alter().
+ */
+function shipwire_api_rates($shipping_service, $order) {
+  static $rates = array();
+
+  $debug = variable_get('shipwire_api_debug', FALSE);
+  $debug_messages = $debug && function_exists('dd');
+
+  // Statically cache the rates. The new API returns all options in a single
+  // request.
+  if (!isset($rates[$order->order_id])) {
+    // get the shipping profile from the order
+    $profile = stools_field_value($order, 'commerce_customer_shipping', LANGUAGE_NONE, array('key' => 'profile_id'));
+    $profile = commerce_customer_profile_load($profile);
+    $address = stools_field_value($profile, 'commerce_customer_address');
+
+    // get the line items from the order so we can pass them to Shipwire
+    $line_items = stools_field_value($order, 'commerce_line_items', LANGUAGE_NONE, array('key' => 'line_item_id'));
+    if (!is_array($line_items)) {
+      $line_items = array($line_items);
+    }
+    commerce_line_item_load_multiple($line_items);
+    $items = array();
+    foreach ($line_items as $line_item) {
+      $items[] = commerce_line_item_load($line_item);
+    }
+
+    // optionally fire a hook to see if any other modules want to provide
+    // a Rate API data object. If not, we'll use the built-in one.
+    $these_rates = module_invoke_all('shipwire_api_get_rates_for_order', $order, $profile, $items);
+    if (!$these_rates) {
+      $these_rates = shipwire_api_get_default_rates_for_order($order, $profile, $items);
+    }
+    if ($debug_messages) {
+      dd($these_rates, __FUNCTION__ . ': rates');
+    }
+    if (!$these_rates) {
+      watchdog('shipwire_api', 'Could not get rates for this order: !order', array('!order' => $order->order_id), WATCHDOG_NOTICE);
+      return FALSE;
+    }
+
+    $rates[$order->order_id] = array();
+    $api = shipwire_api_request();
+    if ($debug) {
+      $api->debug();
+    }
+
+    $errors = array();
+    foreach ($these_rates as $rates_data) {
+      drupal_alter('shipwire_api_rates_data', $rates_data);
+      $response = $api->post()->rate($rates_data);
+      if (!$response->isError()) {
+        $rates[$order->order_id][] = $response;
+        continue;
+      }
+
+      $errors = array_merge($errors, $response->errors);
+    }
+
+    if ($errors) {
+      watchdog('shipwire_api', 'One or more errors when getting shipping rates: !rates', array('!rates' => json_encode($errors)), WATCHDOG_ERROR);
+    }
+  }
+
+  // if there are no rates, just return.
+  if (!$rates[$order->order_id]) {
+    return;
+  }
+  return shipwire_api_rates_get_rate($shipping_service, $rates[$order->order_id]);
+}
+
+/**
+ * Details form for shipping rates.
+ *
+ * Used to show shipping estimates.
+ */
+function shipwire_api_rates_details_form($pane_form, $pane_values, $checkout_pane, $order, $shipping_service) {
+  $shipping_info = $order->shipping_rates[$shipping_service['name']];
+  $service_info = $shipping_info->commerce_unit_price[LANGUAGE_NONE][0]['data']['components'][0]['price']['shipwire_api'];
+  $min = NULL;
+  $max = NULL;
+
+  foreach ($service_info as $this_service_info) {
+    foreach ($this_service_info['service_option']->shipments as $shipment) {
+      if ($min === NULL || strtotime($shipment->expectedDeliveryMinDate) < $min) {
+        $min = strtotime(sprintf("%s +2 days", $shipment->expectedDeliveryMinDate));
+      }
+
+      if ($max === NULL || strtotime($shipment->expectedDeliveryMaxDate) > $max) {
+        $max = strtotime(sprintf("%s +2 days", $shipment->expectedDeliveryMaxDate));
+      }
+    }
+  }
+
+  $delivery = format_date($min);
+  if ($min !== $max) {
+    $delivery .= ' &mdash; ' . format_date($max);
+  }
+
+  return array('estimate' => array('#type' => 'markup', '#markup' => '<div class="delivery-estimate"><strong>Expected delivery:</strong> ' . $delivery . '</div>'));
+}
+
+/**
+ * Given an array of rate(s), figure out the shipping rate.
+ *
+ * There can be one or more shipping rates, so we need to figure out what the
+ * correct option to display to the user is. With one rate, we just use that
+ * and return it. For multiple rates, we need to combine any for the requested
+ * service to handle multiple Shipwire order cases.
+ */
+function shipwire_api_rates_get_rate($shipping_service, $rates) {
+  // figure out the requested shipping service code by replacing
+  // our drupal name to get the one that is associated in Shipwire.
+  $requested_code = strtolower(
+    str_replace('shipwire_api_', '', $shipping_service['name'])
+  );
+
+  // Processes each rate shipwire rate into something we can use more easily.
+  $shipment_rates = array_map(function ($rate) use ($requested_code) {
+    return shipwire_api_process_rate($rate, $requested_code);
+  }, $rates);
+
+  // Ensure that we have a rate for every shipment at the requested rate.
+  $complete = array_reduce($shipment_rates, function ($complete, $rate) {
+    return (isset($rate) && $complete);
+  }, TRUE);
+
+  if ($complete) {
+    $initial = array_shift($shipment_rates);
+    $initial['shipwire_api'] = array($initial['shipwire_api']); // here be a dragon
+
+    // consoldate into a single rate
+    $rate_total = array_reduce($shipment_rates, function ($result, $rate) {
+      //watchdog('lulzbot_store', var_export($result, TRUE), array(), WATCHDOG_DEBUG);
+      if (isset($rate['shipwire_api']) && isset($rate['amount'])) {
+        $result['shipwire_api'][] = $rate['shipwire_api'];
+        $result['amount'] += $rate['amount'];
+        return $result;
+      } else {
+        return $result;
+      }
+    }, $initial);
+  }
+
+  $rate_total = (isset($rate_total)) ? $rate_total : FALSE;
+
+  return $rate_total;
+}
+
+/**
+ * Create the rates data for this order.
+ *
+ * This method is only called if there are no custom rate hooks defined.
+ *))
+ * @see hook_shipwire_api_get_rates_for_order()
+ */
+function shipwire_api_get_default_rates_for_order($order, $profile, $line_items, $warehouse_area = NULL) {
+  $address = stools_field_value($profile, 'commerce_customer_address');
+  $items = array_map('shipwire_api_map_line_items', $line_items);
+  $items = array_filter($items, 'shipwire_api_filter_blank_line_items');
+
+  $warehouse_area = $address['country'];
+
+  $rates_data = array(
+    'options' => array(
+      'currency' => stools_field_value($order, 'commerce_order_total', LANGUAGE_NONE, array('key' => 'currency_code')),
+      'canSplit' => 1,
+      'warehouseArea' => $warehouse_area,
+    ),
+    'order' => array(
+      'shipTo' => shipwire_api_get_order_shipping_address($order),
+      'items' => $items,
+    ),
+  );
+
+  return array($rates_data);
+}
+
+/**
+ * Maps Shipwire shipping method to Commerce shipping service.
+ *
+ * @return array
+ *   Array keyed by shipping method with shipping service as value.
+ */
+function shipwire_api_method_service_map() {
+  $services = &drupal_static(__FUNCTION__);
+  if (empty($services)) {
+    $methods = array_keys(Shipwire::getShippingMethods());
+    foreach ($methods as $method) {
+      $services[$method] = 'shipwire_api_' . preg_replace('/[^a-z0-9]/', '_', strtolower($method));
+    }
+  }
+  return $services;
+}
+
+/**
+ * Map line items into items for the shipwire rates order.
+ */
+function shipwire_api_map_line_items($item) {
+  return array(
+    'sku' => $item->line_item_label,
+    'quantity' => intval($item->quantity),
+  );
+}
+
+/**
+ * Filter blank line items.
+ */
+function shipwire_api_filter_blank_line_items($item) {
+  return isset($item['sku']);
+}
+
+/**
+ * Process the shipping rates.
+ *
+ * This checks the shipping rates data we received from Shipwire, and calculates
+ * the shipping cost for the requested service level.
+ */
+function shipwire_api_process_rate($rate, $requested_code) {
+  // The new Shipwire API returns all of the shipping options, not just
+  // a single one. So we use the statically cached rate call to figure out
+  // which of these services is being requested.
+  if (!isset($rate->resource)) {
+    watchdog('shipwire_api', 'The shipping rates resource data does not appear correct when getting !rate: !resource', array('!rate' => $requested_code, '!resource' => json_encode($rate)), WATCHDOG_ERROR);
+    return;
+  }
+
+  foreach ($rate->resource->rates as $this_rate) {
+    // the rates are made up of service options which are then broken up into
+    // one or more shipments.
+    foreach ($this_rate->serviceOptions as $service_option) {
+      $service_level_code = strtolower($service_option->serviceLevelCode);
+      if ($requested_code === $service_level_code) {
+        $shipment_count = count($service_option->shipments);
+
+        // we need to loop through the shipments in case there are multiple
+        // to figure out the total.
+        $total = 0;
+        foreach ($service_option->shipments as $shipment) {
+          $total += (float) $shipment->cost->amount;
+        }
+
+        // this is an internal data structure for use by this module.
+        $currency = $service_option->shipments[0]->cost->currency;
+        $shipwire_data = array();
+        $shipwire_data['method'] = $service_option->serviceLevelName;
+        $shipwire_data['carrier_code'] = $service_option->shipments[0]->carrier->code;
+        $shipwire_data['warehouse_code'] = $service_option->shipments[0]->warehouseName;
+        $shipwire_data['trackable'] = intval(isset($service_option->shipments[0]->carrier->attributes['trackable']));
+        $shipwire_data['currency'] = $currency;
+        $shipwire_data['cost_total'] = $total;
+        $shipwire_data['cost_freight'] = 0;
+        $shipwire_data['cost_insurance'] = 0;
+        $shipwire_data['cost_packaging'] = 0;
+        $shipwire_data['cost_handling'] = 0;
+        $shipwire_data['service_option'] = $service_option;
+
+        // return the expected commerce shipping information.
+        return array(
+          'amount' => commerce_currency_decimal_to_amount($shipwire_data['cost_total'], $currency),
+          'currency_code' => $currency,
+          'data' => array(),
+          'shipwire_api' => $shipwire_data,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Get a shipping address from a Commerce order.
+ */
+function shipwire_api_get_order_shipping_address($order) {
+  $address = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $destination = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+  if (!empty($destination)) {
+    $address['name'] = $destination['first_name'] . ' ' . $destination['last_name'];
+    $address['address1'] = $destination['thoroughfare'];
+    $address['address2'] = $destination['premise'];
+    $address['city'] = $destination['locality'];
+    $address['state'] = $destination['administrative_area'];
+    $address['country'] = $destination['country'];
+    $address['postalCode'] = $destination['postal_code'];
+  }
+  return $address;
+}
+
+/**
+ * Get the shipping code from an order.
+ */
+function shipwire_api_get_shipping_code_from_order($order) {
+  $line_items = stools_field_value($order, 'commerce_line_items', LANGUAGE_NONE, array('key' => 'line_item_id'));
+  if (!$line_items) {
+    return FALSE;
+  }
+  if (!is_array($line_items)) {
+    $line_items = array($line_items);
+  }
+  commerce_line_item_load_multiple($line_items);
+
+  foreach ($line_items as $line_item_id) {
+    $line_item = commerce_line_item_load($line_item_id);
+    if (stools_field_has_value($line_item, 'commerce_shipping_service')) {
+      return strtoupper(str_replace('shipwire_api_', '', stools_field_value($line_item, 'commerce_shipping_service')));
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Get an array of warehouses and their IDs.
+ */
+function shipwire_api_warehouses() {
+  return array(
+    'Chicago' => 13,
+    'CHI' => 13,
+    'Hong Kong' => 15,
+    'LA' => 11,
+    'LAX' => 11,
+    'Philadelphia' => 12,
+    'PHL' => 12,
+    'Sydney' => 14,
+    'Toronto' => 16,
+    'UK' => 7,
+    'Vancouver' => 17,
+  );
+}

@@ -1,0 +1,135 @@
+<?php
+/**
+ * Implements hook_views_api().
+ */
+function lulzbot_learn_views_api() {
+  return array('api' => 3.0);
+}
+
+/**
+ * Implements hook_views_default_views().
+ */
+function lulzbot_learn_views_default_views() {
+  return stools_views_from_directory_scan('lulzbot_learn');
+}
+
+/**
+ * Implements hook_cinc_display_apply().
+ */
+function lulzbot_learn_cinc_display_apply() {
+
+  // Case study
+  CINCDisplay::init('case_study')
+    ->field('body')
+    ->field('field_case_study_topics')
+    ->update();
+
+  CINCDisplay::init('case_study', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_case_study_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+  // In the news
+  CINCDisplay::init('in_the_news')
+    ->field('body')
+    ->field('field_in_the_news_topics')
+    ->update();
+
+  CINCDisplay::init('in_the_news', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_in_the_news_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+  // Announcement
+  CINCDisplay::init('announcement')
+    ->field('body')
+    ->field('field_announcement_topics', 'taxonomy_term_reference_link')
+    ->update();
+
+  CINCDisplay::init('announcement', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_announcement_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+  // Forum post
+  CINCDisplay::init('forum_post')
+    ->field('body')
+    ->field('field_forum_post_topics')
+    ->update();
+
+  CINCDisplay::init('forum_post', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_forum_post_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+  // Event
+  CINCDisplay::init('event')
+    ->field('body')
+    ->field('field_event_topics')
+    ->update();
+
+  CINCDisplay::init('event', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_event_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+  // Tutorial
+  CINCDisplay::init('tutorial')
+    ->field('body')
+    ->field('field_tutorial_topics')
+    ->update();
+
+  CINCDisplay::init('tutorial', 'promo')
+    ->field('body','text_summary_or_trimmed', array(
+        'settings' => array(
+          'trim_length' => 9999,
+        ),
+      ))
+    ->field('field_tutorial_image', 'image', array(
+        'settings' => array(
+          'image_style' => 'large',
+        ),
+      ))
+    ->update();
+
+}

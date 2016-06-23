@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * Implements hook_migrate_api().
+ */
+function lulzbot_migrate_migrate_api() {
+
+  return array(
+    'api' => 2,
+    'migrations' => array(
+      'lulzbotMigrateNodeAnnouncement' => array(
+        'class_name' => 'lulzbotMigrateNodeAnnouncement',
+      ),
+      'lulzbotMigrateNodeFilament' => array(
+        'class_name' => 'lulzbotMigrateNodeFilament',
+      ),
+      'lulzbotMigrateNodeMerchandise' => array(
+        'class_name' => 'lulzbotMigrateNodeMerchandise',
+      ),
+      'lulzbotMigrateNodePage' => array(
+        'class_name' => 'lulzbotMigrateNodePage',
+      ),
+      'lulzbotMigrateNodePart' => array(
+        'class_name' => 'lulzbotMigrateNodePart',
+      ),
+      'lulzbotMigrateNodePrinter' => array(
+        'class_name' => 'lulzbotMigrateNodePrinter',
+      ),
+      'lulzbotMigrateNodeToolHead' => array(
+        'class_name' => 'lulzbotMigrateNodeToolHead',
+      ),
+
+      'lulzbotMigrateProductFilament' => array(
+        'class_name' => 'lulzbotMigrateProductFilament',
+      ),
+      'lulzbotMigrateProductPart' => array(
+        'class_name' => 'lulzbotMigrateProductPart',
+      ),
+      'lulzbotMigrateProductPrinter' => array(
+        'class_name' => 'lulzbotMigrateProductPrinter',
+      ),
+      'lulzbotMigrateProductToolHead' => array(
+        'class_name' => 'lulzbotMigrateProductToolHead',
+      ),
+      'lulzbotMigrateProductTshirt' => array(
+        'class_name' => 'lulzbotMigrateProductTshirt',
+      ),
+      'lulzbotMigrateUserUser' => array(
+        'class_name' => 'lulzbotMigrateUserUser',
+      ),
+    ),
+  );
+
+}

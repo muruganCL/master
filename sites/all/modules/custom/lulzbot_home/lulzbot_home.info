@@ -1,0 +1,7 @@
+name = LulzBot Home
+description = Home configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = lulzbot_deploy
+dependencies[] = context
+

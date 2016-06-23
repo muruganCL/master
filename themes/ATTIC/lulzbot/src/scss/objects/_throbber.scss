@@ -1,0 +1,50 @@
+//
+// Drupal progress throbber
+//
+
+.select-wrapper .ajax-progress-throbber {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  width: 80%;
+  border-top: 1px solid $clr-border;
+  border-left: 1px solid $clr-border;
+  border-bottom: 1px solid $clr-border;
+  background-color: $white;
+  .message {
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    left: 30px;
+    margin-top: -10px;
+    padding: 0;
+    background-color: $white;
+  }
+  .throbber {
+    position: absolute;
+    top: 50%;
+    left: 8px;
+    margin-top: -7.5px;
+  }
+}
+
+.ajax-progress-throbber {
+  display: inline-block;
+  .throbber {
+    display: inline-block;
+    margin: 0 0 -1px 10px;
+  }
+  .message {
+    display: none;
+  }
+}
+
+.progress-disabled {
+  float: none;
+}
+.ajax-progress {
+  float: none;
+}

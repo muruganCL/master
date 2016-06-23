@@ -1,0 +1,66 @@
+//
+// @file
+// Link styles.
+//
+// These styles deal with icons and hover effects.
+//
+
+@mixin link--underline-on-hover {
+  text-decoration: none;
+
+  &:hover,
+  &:focus {
+    text-decoration: underline;
+  }
+}
+
+@mixin link--icon($width: 30px, $height: $width ) {
+  width: $width;
+  height: $height;
+  background-position: center;
+  text-indent: $width * 2;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+@mixin link--social {
+  @include link--icon(30px);
+  margin-right: vrem(1);
+}
+
+@mixin link--go($font-size: link--huge) {
+  display: block;
+  color: $green-darker;
+  text-decoration: none;
+  vertical-align: middle;
+  @include font-size(link--go);
+
+  transition: color .3s ease-in-out;
+  &:focus,
+  &:hover {
+    color: rgba($green-dark, 0.9);
+    &:after {
+      opacity: .8;
+    }
+  }
+
+  &:after {
+    @include link--icon(24px);
+    content: "";
+    display: inline-block;
+    vertical-align: middle;
+    background-size: 12px;
+    margin-left: .25em;
+    opacity: 1;
+
+    transition: all .3s ease-in-out;
+  }
+
+  @include bp(small) {
+    &:after {
+      height: 30px;
+      width: 30px;
+      background-size: auto;
+    }
+  }
+}

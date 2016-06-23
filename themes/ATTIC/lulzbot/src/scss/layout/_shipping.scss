@@ -1,0 +1,49 @@
+//
+// Commerce shipping
+//
+
+.commerce_shipping {
+  border: 0;
+  padding: 0;
+
+  legend {
+    display: none;
+  }
+}
+
+#commerce-shipping-service-details {
+  margin-top: vrem(6);
+}
+
+.form-item-commerce-payment-payment-method {
+  display: table;
+  input,
+  label {
+    display: table-cell;
+  }
+  label { padding-left: vrem(2); }
+}
+
+.checkout-buttons {
+  margin-top: vrem(6);
+  .checkout-continue {
+    margin-right: vrem(2);
+  }
+
+  .checkout-back {
+    @include button;
+    @include button--tertiary($green-darker, $green-darker);
+    @include button--medium;
+    text-shadow: none;
+
+    @include bp(medium) {
+      margin-left: vrem(2);
+    }
+
+    &:hover,
+    &:focus {
+      color: $green-darker;
+      text-decoration: none;
+    }
+  }
+}

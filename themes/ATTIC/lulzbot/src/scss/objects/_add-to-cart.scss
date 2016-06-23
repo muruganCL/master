@@ -1,0 +1,195 @@
+
+//
+// Add to cart form
+//
+
+.location {
+  display: inline-block;
+  margin-top: vrem(3);
+  @include font-size(body--tiny);
+  font-family: $ff-titillium-semibold;
+}
+.link--change-location {
+  display: inline-block;
+  margin-left: vrem(1);
+  text-decoration: underline;
+}
+
+.notify-me {
+  display: none;
+}
+.notify-btn {
+  @include block-background;
+  padding: vrem(3) vrem(3);
+  display: block;
+  margin-top: vrem(3);
+  margin-bottom: vrem(4);
+  font-family: $ff-titillium-semibold;
+  @include font-size(body--tiny);
+  color: $clr-text;
+  border: 1px solid $gray-lighter;
+  span {
+    color: $red;
+  }
+}
+#edit-notification {
+  display: none;
+}
+
+.country-selection {
+  position: relative;
+  border: 0;
+  margin-top: vrem(2);
+  @include block-background;
+  @include font-size(body--tiny);
+}
+.form-item-countries {
+  float: left;
+  margin-top: 0;
+
+  .form-item-label {
+    display: block;
+    width: 100%;
+    margin-bottom: vrem(2);
+    vertical-align: baseline;
+    position: relative;
+    top: -0.4em;
+
+    @include bp(x-large) {
+      // margin-bottom: 0;
+    }
+    span {
+      font-family: $ff-titillium-semibold;
+      span {
+        color: $red;
+      }
+    }
+  }
+  .select-wrapper {
+    margin-bottom: vrem(2);
+    @include bp(country--select) {
+      position: absolute;
+      bottom: vrem(5);
+      left: vrem(5);
+      width: 45%;
+      margin-bottom: 0;
+    }
+    .product-reference-2 & {
+      position: relative;
+      left: inherit;
+      right: inherit;
+      bottom: inherit;
+      margin-bottom: vrem(2);
+      width: 100%;
+    }
+  }
+}
+
+#lulzbot-store-check-availability {
+  width: 100%;
+  @include bp(country--select) {
+    float: right;
+    width: 45%;
+  }
+  .product-reference-2 & {
+    width: 100%;
+    float: none;
+  }
+}
+
+.message {
+  @include block-background;
+  @include font-size(body--tiny);
+}
+
+// Product attributes
+.product-info .field--field_product_reference {
+  .attribute-widgets {
+    @include clearfix;
+    margin-top: vrem(4);
+    .form-item {
+
+      @include bp(medium) {
+        float: left;
+        margin-right: span(1);
+
+        &:nth-last-child(2):first-child,
+        &:nth-last-child(2):first-child ~ .form-item:not(.form-type-filament-colors) {
+          &:nth-child(1) {
+            width: span(3.5 of 8);
+          }
+          &:nth-child(2) {
+            width: span(3.5 of 8);
+          }
+
+          &:nth-child(2n + 1) {
+            clear: left;
+            @include clearfix;
+          }
+        }
+
+        &:nth-last-child(3):first-child,
+        &:nth-last-child(3):first-child ~ .form-item:not(.form-type-filament-colors) {
+
+          &:nth-child(1):not(.form-type-filament-colors) {
+            width: span(2.4 of 8);
+          }
+          &:nth-child(2):not(.form-type-filament-colors) {
+            width: span(2.4 of 8);
+          }
+          &:nth-child(3):not(.form-type-filament-colors) {
+            width: span(2.4 of 8);
+            margin-right: 0;
+          }
+          &:nth-child(3n + 1):not(.form-type-filament-colors) {
+            clear: left;
+          }
+        }
+
+
+        &:not(:first-child) {
+          margin-top: 0;
+        }
+        &:nth-child(n+3) {
+          margin-top: 0;
+        }
+        &:nth-child(2n) {
+          // @include span(3.5 at 5.5 of 8);
+          margin-top: 0;
+        }
+
+      }
+    }
+
+    .node-filament & {
+      .form-item {
+        @include bp(medium) {
+          width: inherit;
+          // float: none;
+          // margin-left: 0;
+          // margin-right: 0;
+          &:nth-child(2n) {
+            width: inherit;
+            // float: none;
+            // margin-left: 0;
+            // margin-right: 0;
+            // margin-top: vrem(2);
+          }
+        }
+      }
+    }
+
+    .form-type-filament-colors {
+      display: block;
+      width: 100%;
+      float: none;
+    }
+
+    > .form-item.form-item-quantity {
+      @include bp(medium) {
+        margin-top: 41px;
+        @include span(3.5 of 8);
+      }
+    }
+  }
+}

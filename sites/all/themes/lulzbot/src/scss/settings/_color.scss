@@ -1,0 +1,89 @@
+//
+// @file
+// Color variables.
+//
+@import "../utilities/blend-mode";
+
+//
+// Colors
+//
+$white:             #ffffff;
+$black:             #000000;
+
+$gray-border:       #686868;
+$gray-white:        #f6f6f6;
+$gray-silver:       #b7b7b7;
+$gray-lightest:     #f0f0f0;
+$gray-lighter:      #e0e0e0;
+$gray-light:        #d0d0d0;
+$gray:              #666;
+$gray-dark:         #565656;
+$gray-darker:       #3e3e3e;
+$gray-darkest:      #222;
+$gray-black:        #231f20;
+
+$blue:              #003d79;
+
+$red:               #d31245;
+
+$green-lighter:     #dae68c;
+$green-light:       #cbdc5e;
+$green:             #c1d640;
+$green-dark:        #a2ba0c;
+$green-darker:      #92a710;
+
+$teal:              #62cae3;
+$teal-dark:         #2db3d3;
+$teal-darker:       #00788a;
+
+$yellow:            #faaf4c;
+$yellow-dark:       #f3a135;
+
+
+//
+// Semantic colors
+//
+$clr-neutral:      $gray;      // Default nuetral color
+// $clr-text:         $gray-darker;     // Default body copy color
+$clr-text:         $gray;
+$clr-link:         $green-dark;            // Default link color
+$clr-heading:      $gray-darker;           // Default accent color
+$clr-accent:       $gray-dark;           // Default accent color
+$clr-border:       $gray-lighter;    // Default border and required color
+$clr-status:       $green;      // Default status color
+$clr-warning:      $blue;            // Default warning color
+$clr-error:        $red;             // Default error and required color
+$clr-table-border: $gray-light;      // Default table border color
+$clr-table-odd:    $gray-white;      // Default table odd row color
+$clr-table-even:   $white;           // Default table even row color
+
+//
+// Color Schemes
+//
+// Format:
+//
+// blue: (
+//   background: $blue,
+//   text: $white,
+//   heading: $white,
+//   link: $white,
+//   link-hover: $white,
+//   link-visited: $white
+// ),
+//
+$color-schemes: (
+  white: (
+    text: $white,
+    heading: $white,
+    link: $white,
+  ),
+  white--greenlinks: (
+    text: $white,
+    heading: $white,
+    link: $green,
+    link-hover: rgba($green-dark, 0.8),
+  ),
+  off-white: (
+    background: $gray-white,
+  ),
+);

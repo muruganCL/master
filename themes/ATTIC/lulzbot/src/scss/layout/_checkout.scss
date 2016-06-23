@@ -1,0 +1,137 @@
+//
+// Commerce Checkout page
+//
+
+.cart_contents,
+.customer_profile_shipping,
+.customer_profile_billing,
+.commerce_coupon,
+.account,
+.customer_profile_billing,
+.customer_profile_shipping {
+  border: 0;
+  padding: 0;
+  margin-bottom: vrem(12);
+  padding-bottom: vrem(12);
+  @include rule(bottom);
+  // &:not(:last-of-type) {
+
+  // }
+
+  &:last-child {
+    // padding-bottom: 0;
+    // border-bottom: 0;
+  }
+
+  select {
+    @include font-size(body--tiny);
+  }
+  .select-wrapper {
+    display: inline-block;
+    margin-top: 0;
+  }
+  .form-type-textfield {
+    input {
+      padding: vrem(1.45) vrem(2);
+    }
+  }
+  .form-item + .form-item {
+    margin-top: 0;
+  }
+}
+
+.cart_contents {
+  position: relative;
+  &:after {
+    content: '';
+    display: inline-block;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    margin-left: -10px;
+    width: 20px;
+    height: 20px;
+    border-right: 2px solid $gray;
+    border-bottom: 2px solid $gray;
+    transform: rotate(45deg);
+  }
+}
+
+.views-align-right {
+  text-align: right;
+}
+
+.checkout-buttons {
+  border: 0;
+  padding: 0;
+}
+
+.cart_contents {
+  legend {
+    display: none;
+  }
+}
+
+.customer_profile_billing {
+  .form-item-label {
+    // display: inline-block;
+  }
+}
+
+.checkout-buttons {
+  .checkout-continue {
+    margin-right: vrem(2);
+  }
+
+  .checkout-cancel {
+    @include button;
+    @include button--tertiary($green-darker, $green-darker);
+    @include button--medium;
+    text-shadow: none;
+
+    @include bp(medium) {
+      margin-left: vrem(2);
+    }
+
+    &:hover,
+    &:focus {
+      color: $green-darker;
+      text-decoration: none;
+    }
+  }
+}
+
+.button-operator {
+  display: block;
+  margin-top: vrem(1);
+  margin-bottom: vrem(1);
+  @include bp(medium) {
+    display: inline;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+}
+
+.commerce-order-handler-area-order-total {
+  margin-top: vrem(2);
+
+  tr {
+    &.odd {
+      background: transparent;
+    }
+  }
+  td {
+    border-top: 0;
+  }
+  .component-type-commerce-price-formatted-amount {
+    td {
+      @include rule(top);
+    }
+  }
+}
+
+// Overriding drupal commerce styles
+.commerce-order-handler-area-order-total .commerce-price-formatted-components tr.component-type-commerce-price-formatted-amount {
+  font-family: $ff-titillium-semibold;
+  font-weight: $fw-medium;
+}

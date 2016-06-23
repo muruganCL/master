@@ -1,0 +1,98 @@
+//
+// Heading and title styles.
+//
+
+// Page titles
+.page-title {
+  margin-bottom: rhythm(4, $fs-4xl);
+  @include font-size(title--huge);
+  // @include box--bleed;
+  color: $clr-heading;
+}
+
+.basic-page--title {
+  margin-bottom: vrem(2);
+  text-transform: uppercase;
+  @include font-size(heading--huge);
+}
+
+.title {
+  @include font-size(title--huge);
+}
+
+.heading--large {
+  @include heading--large;
+}
+
+.heading--thin {
+  @include heading--thin;
+}
+
+.product--title {
+  @include product--title;
+}
+
+.product-teaser--title {
+  @include product-teaser--title;
+}
+
+.heading--bold {
+  @include heading--bold;
+}
+
+.heading--small {
+  @include heading--small;
+}
+
+.heading--tiny {
+  @include heading--tiny;
+}
+
+.heading--section {
+  @include heading--section;
+}
+
+.heading--link-text {
+  a {
+    color: $gray-darker;
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.heading--sidebar.block-title {
+  margin-top: 0;
+  @include font-size(body--tiny);
+  color: $gray-black;
+}
+
+.heading--ruled {
+  padding-bottom: vrem(2);
+  border-bottom: 1px solid $clr-border;
+  color: $gray-black;
+}
+
+.compare--printer-title {
+  padding-bottom: vrem(2);
+  margin-top: 0;
+  margin-bottom: vrem(2);
+  border-bottom: 1px solid rgba($gray-black, .2);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  @include font-size(compare--printer-title);
+  color: $gray-black;
+}
+
+.header--store-category {
+  @include header--store-category;
+  &.block-title {
+    @include header--store-category;
+  }
+}
+
+.block-title {
+  .aside & {
+    @include heading--thin;
+  }
+}

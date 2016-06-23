@@ -1,0 +1,175 @@
+<?php
+/**
+ * Implements hook_commerce_product_type_info().
+ */
+function lulzbot_products_commerce_product_type_info() {
+  return array(
+    'tool_head' => array(
+      'type' => 'tool_head',
+      'name' => 'Tool Head',
+      'description' => '',
+    ),
+    'part' => array(
+      'type' => 'part',
+      'name' => 'Part',
+      'description' => 'Parts include every component of a printer aside from the tool head.',
+    ),
+    'tshirt' => array(
+      'type' => 'tshirt',
+      'name' => 'T-Shirt',
+      'description' => '',
+    ),
+    'printer' => array(
+      'type' => 'printer',
+      'name' => 'Printer',
+      'description' => '',
+    ),
+    'filament' => array(
+      'type' => 'filament',
+      'name' => 'Filament',
+      'description' => '',
+    ),
+  );
+}
+
+/**
+ * Implements hook_infodesk_full_html_raw().
+ */
+function lulzbot_products_lulzbot_set_text_formats() {
+  return array(
+    'filament' => array(
+      'field_filament_video_title' => 'impactful_titles'
+    ),
+    'merchandise' => array(
+      'field_merchandise_video_title' => 'impactful_titles'
+    ),
+    'part' => array(
+      'field_part_video_title' => 'impactful_titles',
+    ),
+    'printer' => array(
+      'field_printer_fc1_text' => 'impactful_titles',
+      'field_printer_fc2_text' => 'impactful_titles',
+      'field_printer_fc3_text' => 'impactful_titles',
+    ),
+    'tool_head' => array(
+      'field_tool_head_video_title' => 'impactful_titles',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function lulzbot_products_field_formatter_info() {
+  return array(
+    'photoswipe' => array(
+      'label' => t('PhotoSwipe'),
+      'field types' => array('image'),
+      'settings'  => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function lulzbot_products_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $template_path = drupal_get_path('module', 'lulzbot_products') . '/templates';
+
+  foreach ($items as $delta => $item) {
+    $variables = array();
+
+    $original_image_info = image_get_info($item['uri']);
+
+    $variables['original'] = file_create_url($item['uri']);
+    $variables['original_width'] = $original_image_info['width'];
+    $variables['original_height'] = $original_image_info['height'];
+
+    $variables['thumb'] = file_create_url(image_style_url('product_thumbnail', $item['uri']));
+    if ($delta === 0) {
+      $variables['thumb'] = file_create_url(image_style_url('product_large', $item['uri']));
+    }
+
+    $element[$delta]['#markup'] = theme('photoswipe', $variables);
+    $element['#prefix'] = '<div class="product-gallery">';
+    $element['#suffix'] = '</div>' . file_get_contents($template_path . '/lulzbot_products--photoswipe-controls.tpl.php');
+  }
+
+  // $options = array(
+  //   'html'        => TRUE,
+  //   'attributes'  => array(),
+  //   );
+
+  return $element;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function lulzbot_products_theme() {
+  $template_path = drupal_get_path('module', 'lulzbot_products') . '/templates';
+
+  return array(
+    'photoswipe' => array(
+      'path' => $template_path,
+      'variables' => array(),
+      'template' => 'lulzbot_products--photoswipe',
+    ),
+  );
+}
+
+function lulzbot_products_entity_info_alter(&$entity_info) {
+  $entity_info['commerce_product']['view modes']['feature'] = array(
+    'label' => t('Feature'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Get the links to support pages for the given product.
+ *
+ * Statically cached. Reset by passing 'reset' to the options array.
+ *
+ * If $options['attributes'] is set, that will be passed to the l() function.
+ *
+ * @param object $node
+ *   The node object to get support links for.
+ * @param array $options
+ *   Optional array of options.
+ *
+ * @return array
+ *   An array of support node(s) for this product.
+ */
+function lulzbot_products_get_support_links_for_product($node, array $options = array()) {
+  static $links = array();
+
+  $static_key = $node->nid;
+
+  if (empty($links[$static_key]) || (isset($options['reset']) && $options['reset'])) {
+    $query = db_select('field_data_field_support_product', 'p');
+    $query->fields('p', array('entity_id'));
+    $query->join('node', 'n', 'n.nid=p.entity_id AND n.vid=p.revision_id');
+    $query->fields('n', array('title'));
+    $links[$static_key] = $query
+      ->condition('field_support_product_target_id', $node->nid, '=')
+      ->condition('n.status', 1, '=')
+      ->execute()
+      ->fetchAllAssoc('entity_id');
+  }
+
+  $link_options = array();
+  if (isset($options['attributes'])) {
+    $link_options['attributes'] = $options['attributes'];
+  }
+  $support_links = array();
+  foreach ($links[$static_key] as $support_node) {
+    $support_links[] = l(
+      t('Support: !title', array('!title' => $support_node->title)),
+      'node/' . $support_node->entity_id,
+      $link_options
+    );
+  }
+
+  return $support_links;
+}

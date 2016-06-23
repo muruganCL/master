@@ -1,0 +1,285 @@
+<?php
+/**
+ * @file
+ * commerce_signifyd functionality
+ */
+
+/**
+ * Get the data to submit to Signifyd from a Commerce order.
+ *
+ * Data can be altered with hook_commerce_signifyd_alter_data().
+ *
+ * @param object $order
+ *   The commerce order.
+ *
+ * @return array
+ *   The array to send to Signifyd.
+ *
+ * @see hook_commerce_signifyd_alter_data()
+ */
+function commerce_signifyd_get_data_from_order($order) {
+  $data = array();
+
+  // created date
+  $date = new DateTime('@' . $order->created);
+  $created_date = $date->format(DateTime::ISO8601);
+
+  // modified date
+  $date = new DateTime('@' . $order->changed);
+  $changed_date = $date->format(DateTime::ISO8601);
+
+  $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+  $currency = commerce_signifyd_get_order_currency($order);
+
+  $data['purchase'] = array(
+    'browserIpAddress' => $order->hostname,
+    'orderId' => $order->order_number,
+    'createdAt' => $created_date,
+    'currency' => $currency,
+    'orderChannel' => 'WEB',
+    'totalPrice' => commerce_currency_amount_to_decimal($commerce_order->commerce_order_total->amount->value(), $currency),
+    'products' => commerce_signifyd_get_products_from_order($order),
+    'shipments' => commerce_signifyd_get_shipping_from_order($order),
+    'avsResponse' => commerce_signifyd_get_avs_response_for_order($order),
+    'cvvResponse' => commerce_signifyd_get_cvv_response_for_order($order),
+    'transactionId' => commerce_signifyd_get_transaction_id_for_order($order),
+  );
+
+  $shipping = $commerce_order->commerce_customer_shipping->value();
+  $shipping_wrapper = entity_metadata_wrapper('commerce_customer_profile', $shipping);
+
+  $billing = $commerce_order->commerce_customer_billing->value();
+  $billing_wrapper = entity_metadata_wrapper('commerce_customer_profile', $billing);
+
+  $data['recipient'] = array(
+    'fullName' => $shipping_wrapper->commerce_customer_address->name_line->value(),
+    'confirmationEmail' => $order->mail,
+    'deliveryAddress' => array(
+      'streetAddress' => $shipping_wrapper->commerce_customer_address->thoroughfare->value(),
+      'unit' => $shipping_wrapper->commerce_customer_address->premise->value(),
+      'city' => $shipping_wrapper->commerce_customer_address->locality->value(),
+      'provinceCode' => $shipping_wrapper->commerce_customer_address->administrative_area->value(),
+      'postalCode' => $shipping_wrapper->commerce_customer_address->postal_code->value(),
+      'countryCode' => $shipping_wrapper->commerce_customer_address->country->value(),
+    ),
+  );
+
+  // check if there is an organization
+  try {
+    if ($organization = $billing_wrapper->commerce_customer_address->organisation_name->value()) {
+      $data['recipient']['organization'] = $organization;
+    }
+  }
+  catch (EntityMetadataWrapperException $e) {
+  }
+
+  $data['card'] = array(
+    'cardHolderName' => $billing_wrapper->commerce_customer_address->name_line->value(),
+    'billingAddress' => array(
+      'streetAddress' => $billing_wrapper->commerce_customer_address->thoroughfare->value(),
+      'unit' => $billing_wrapper->commerce_customer_address->premise->value(),
+      'city' => $billing_wrapper->commerce_customer_address->locality->value(),
+      'provinceCode' => $billing_wrapper->commerce_customer_address->administrative_area->value(),
+      'postalCode' => $billing_wrapper->commerce_customer_address->postal_code->value(),
+      'countryCode' => $billing_wrapper->commerce_customer_address->country->value(),
+    ),
+  );
+
+  $data['userAccount'] = commerce_signifyd_get_user_account_for_order($order);
+
+  // let people alter the data
+  drupal_alter('commerce_signifyd_data', $data, $order);
+  return $data;
+}
+
+/**
+ * Get products for the signifyd data.
+ */
+function commerce_signifyd_get_products_from_order($order) {
+  $products = array();
+  $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+  $currency = commerce_signifyd_get_order_currency($order);
+  $line_items = array_filter($commerce_order->commerce_line_items->value(), 'commerce_signifyd_filter_product_line_items');
+  foreach ($line_items as $line_item) {
+    $this_line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $this_product = $this_line_item->commerce_product->value();
+    $products[] = array(
+      'itemId' => $this_product->sku,
+      'itemName' => $this_product->title,
+      'itemQuantity' => floatval($this_line_item->quantity->value()),
+      'itemPrice' => commerce_currency_amount_to_decimal($this_line_item->commerce_total->amount->value(), $currency),
+    );
+  }
+  return $products;
+}
+
+/**
+ * Get products for the signifyd data.
+ */
+function commerce_signifyd_get_shipping_from_order($order) {
+  $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+  $line_items = array_filter($commerce_order->commerce_line_items->value(), 'commerce_signifyd_filter_shipping_line_items');
+  $currency = commerce_signifyd_get_order_currency($order);
+  foreach ($line_items as $line_item) {
+    $this_line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
+    return array(
+      'shippingMethod' => $line_item->line_item_label,
+      'shippingPrice' => commerce_currency_amount_to_decimal($this_line_item->commerce_total->amount->value(), $currency),
+    );
+  }
+  return array();
+}
+
+/**
+ * Get the address verification service response for this order.
+ */
+function commerce_signifyd_get_avs_response_for_order($order) {
+  $query = db_select('commerce_payment_transaction', 't');
+  $payload = $query->fields('t', array('payload'))
+    ->condition('order_id', $order->order_number)
+    ->execute()
+    ->fetchCol();
+  if ($payload) {
+    $payload = unserialize($payload[0]);
+    $payload = array_shift($payload);
+    if (isset($payload['AVSCODE'])) {
+      return $payload['AVSCODE'];
+    }
+    watchdog('commerce_signifyd', 'Could not find AVS code in commerce_payment_transaction for order !order: !payload', array('!order' => $order->order_number, '!payload' => $payload), WATCHDOG_ERROR, l('Order payment', 'admin/commerce/orders/' . $order->order_number . '/payment'));
+  }
+
+  // if we don't have a code, pass this
+  // https://signifyd.zendesk.com/hc/en-us/articles/202216463-How-do-I-map-my-AVS-CVV-codes-to-Signifyd-s-API-
+  return 'U';
+}
+
+/**
+ * Get the CVV order response for this order.
+ */
+function commerce_signifyd_get_cvv_response_for_order($order) {
+  $query = db_select('commerce_payment_transaction', 't');
+  $payload = $query->fields('t', array('payload'))
+    ->condition('order_id', $order->order_number)
+    ->execute()
+    ->fetchCol();
+  if ($payload) {
+    $payload = unserialize($payload[0]);
+    $payload = array_shift($payload);
+    if (isset($payload['CVV2MATCH'])) {
+      return $payload['CVV2MATCH'];
+    }
+    watchdog('commerce_signifyd', 'Could not find CVV code in commerce_payment_transaction for order !order: !payload', array('!order' => $order->order_number, '!payload' => $payload), WATCHDOG_ERROR, l('Order payment', 'admin/commerce/orders/' . $order->order_number . '/payment'));
+  }
+
+  // if we don't have a code, pass this
+  // https://signifyd.zendesk.com/hc/en-us/articles/202216463-How-do-I-map-my-AVS-CVV-codes-to-Signifyd-s-API-
+  return 'P';
+}
+
+/**
+ * Get the Transaction ID order response for this order.
+ */
+function commerce_signifyd_get_transaction_id_for_order($order) {
+  $query = db_select('commerce_payment_transaction', 't');
+  $payload = $query->fields('t', array('payload'))
+    ->condition('order_id', $order->order_number)
+    ->execute()
+    ->fetchCol();
+  if ($payload) {
+    $payload = unserialize($payload[0]);
+    $payload = array_shift($payload);
+    if (isset($payload['TRANSACTIONID'])) {
+      return $payload['TRANSACTIONID'];
+    }
+    watchdog('commerce_signifyd', 'Could not find the Transaction ID in commerce_payment_transaction for order !order: !payload', array('!order' => $order->order_number, '!payload' => $payload), WATCHDOG_ERROR, l('Order payment', 'admin/commerce/orders/' . $order->order_number . '/payment'));
+  }
+  return NULL;
+}
+
+/**
+ * Get details about the user account for this order.
+ */
+function commerce_signifyd_get_user_account_for_order($order) {
+  $data = array(
+    'emailAddress' => $order->mail,
+    'username' => '',
+    'accountNumber' => '',
+    'aggregateOrderCount' => 0,
+    'aggregateOrderDollars' => 0,
+  );
+
+  $user = user_load($order->uid);
+  if ($user && $user->uid <> 0) {
+    $last_order_id = db_query(
+      'SELECT MAX(order_number) FROM commerce_order WHERE uid=:uid AND order_number<>:order AND status=:completed',
+      array(
+        ':uid' => $order->uid,
+        ':order' => $order->order_number,
+        ':completed' => 'completed',
+      )
+    )->fetchCol();
+
+    // createdDate
+    $created = new DateTime('@' . $user->created);
+    $created = $created->format(DateTime::ISO8601);
+
+    $currency = commerce_signifyd_get_order_currency($order);
+
+    // field_data_commerce_total
+    $results = db_query('SELECT SUM(t.commerce_order_total_amount) AS s, COUNT(*) AS c FROM commerce_order o
+      JOIN field_data_commerce_order_total t ON t.entity_id=o.order_id AND t.revision_id=o.revision_id
+      WHERE o.uid=:uid AND o.status=:completed', array(':uid' => $order->uid, ':completed' => 'completed'))->fetchAssoc();
+
+    $data = array(
+      'emailAddress' => $user->mail,
+      'username' => $user->name,
+      'createdDate' => $created,
+      'accountNumber' => intval($user->uid),
+      'aggregateOrderCount' => $results['c'],
+      'aggregateOrderDollars' => commerce_currency_amount_to_decimal($results['s'], $currency),
+    );
+
+    if ($last_order_id) {
+      $data['lastOrderId'] = intval($last_order_id);
+    }
+  }
+  elseif ($user && $user->uid == 0) {
+    // createdDate
+    $created = new DateTime('@' . $order->created);
+    $created = $created->format(DateTime::ISO8601);
+
+    $data = array(
+      'createdDate' => $created,
+    );
+  }
+
+  return $data;
+}
+
+/**
+ * Get order currency.
+ */
+function commerce_signifyd_get_order_currency($order) {
+  static $orders = array();
+
+  if (!isset($orders[$order->order_number])) {
+    $commerce_order = entity_metadata_wrapper('commerce_order', $order);
+    $orders[$order->order_number] = $commerce_order->commerce_order_total->currency_code->value();
+  }
+
+  return $orders[$order->order_number];
+}
+
+/**
+ * Filter product line items.
+ */
+function commerce_signifyd_filter_product_line_items($item) {
+  return $item->type === 'product';
+}
+
+/**
+ * Filter shipping line items.
+ */
+function commerce_signifyd_filter_shipping_line_items($item) {
+  return $item->type === 'shipping';
+}

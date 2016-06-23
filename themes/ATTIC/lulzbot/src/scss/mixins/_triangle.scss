@@ -1,0 +1,59 @@
+//
+// Triangles
+//
+
+// @mixin footer-triangle($size, $color: $green) {
+//   position: absolute;
+//   bottom: -($size * 2);
+//   right: -($size / 2);
+//   width: $size;
+//   height: $size * 4;
+//   background-color: $color;
+//   transform: rotate(45deg);
+
+// }
+
+
+@mixin footer-triangle($size, $color: $green, $opacity: 1) {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: $size;
+  height: $size;
+  border-left: $size solid transparent;
+  border-top: ($size*1.1) solid transparent;
+  border-bottom: ($size*1.1) solid $color;
+  border-right: $size solid $color;
+  z-index: 0;
+  opacity: $opacity;
+}
+
+@mixin top-triangle($width, $height, $color: $green, $opacity: 1) {
+  position: absolute;
+  // top: 0;
+  bottom: 0;
+  right: 0;
+  width: $width;
+  height: $height;
+  border-left: $width solid transparent;
+  border-top: $height solid transparent;
+  border-bottom: $height solid $color;
+  border-right: $width solid $color;
+  z-index: -1;
+  opacity: $opacity;
+}
+
+@mixin top-triangle-left($width, $height, $color: $gray-lighter, $opacity: 1) {
+  position: absolute;
+  // top: 0;
+  bottom: 0;
+  left: 0;
+  width: $width;
+  height: $height;
+  border-right: $width solid transparent;
+  border-top: $height solid transparent;
+  border-bottom: $height solid $color;
+  border-left: $width solid $color;
+  z-index: -2;
+  opacity: $opacity;
+}

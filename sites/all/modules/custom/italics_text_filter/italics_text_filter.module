@@ -1,0 +1,25 @@
+<?php
+/**
+ * Implements hook_filter_info().
+ */
+function italics_text_filter_filter_info() {
+  return array(
+    'italics' => array(
+      'title' => t('Add italics in text marked with asterisks'),
+      'process callback' => 'italics_text_filter_filter',
+    ),
+  );
+}
+
+/**
+ * Replace text surrounded by asterisks with italics.
+ */
+function italics_text_filter_filter($text, $filter, $format, $langcode, $cache, $cache_id) {
+  preg_match_all('/\*([^\*]+)\*/', $text, $matches);
+  if ($matches) {
+    for ($i = 0; $i < count($matches[0]); $i++) {
+      $text = str_replace($matches[0][$i], '<em>' . $matches[1][$i] . '</em>', $text);
+    }
+  }
+  return $text;
+}

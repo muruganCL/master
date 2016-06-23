@@ -1,0 +1,140 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_dev_content_enable() {
+  // add dev content
+  $content = realpath(DRUPAL_ROOT . '/../resources/content');
+  $files = lulzbot_dev_content_find_files($content);
+
+  // build dependency tree for files
+  $tree = array();
+  foreach ($files as $uri => $details) {
+    $data = lulzbot_dev_content_parse_file($uri);
+    if (!$data) {
+      if (function_exists('drush_log')) {
+        drush_log(t('Could not parse file: !name', array('!name' => $details['filename'])), 'error');
+      }
+      break;
+    }
+    $tree[$details->filename] = array(
+      'depends_on' => array(),
+      'dependencies' => array(),
+      'processed' => FALSE,
+      'data' => $data,
+    );
+    if (isset($data['dependencies'])) {
+      $tree[$details->filename]['depends_on'] = $data['dependencies'];
+    }
+  }
+
+  $runs = 10;
+  while ($unprocessed = array_filter($tree, 'lulzbot_dev_content_filter_processed_files')) {
+    $runs--;
+    if ($runs <= 0) {
+      drush_log(t('Too many processing runs, stopping'), 'error');
+      break;
+    }
+    foreach ($unprocessed as $filename => $details) {
+      // if this does not depend on anything we can process it now
+      if (empty($details['depends_on'])) {
+        drush_log(t('Processing !filename', array('!filename' => $filename)), 'ok');
+        lulzbot_dev_content_process($filename, $details['data']);
+        $tree[$filename]['processed'] = TRUE;
+        $runs++;
+        continue;
+      }
+
+      $can_process = TRUE;
+      foreach ($details['depends_on'] as $dependency) {
+        if (!isset($tree[$dependency])) {
+          drush_log(t('Cannot find dependency !dependency for !filename', array('!dependency' => $dependency, '!filename' => $filename)), 'error');
+          return FALSE;
+        }
+
+        if (!$tree[$dependency]['processed']) {
+          $can_process = FALSE;
+          break;
+        }
+      }
+
+      // we cannot process yet, skip for now
+      if (!$can_process) {
+        continue;
+      }
+
+      drush_log(t('Processing !filename', array('!filename' => $filename)), 'ok');
+      lulzbot_dev_content_process($filename, $details['data']);
+      $tree[$filename]['processed'] = TRUE;
+      $runs++;
+    }
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function lulzbot_dev_content_schema() {
+  return array(
+    'dev_content_map' => array(
+      'fields' => array(
+        'machine_name' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'file' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => 'source id',
+        ),
+        'destination_id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+          'description' => 'destination id',
+        ),
+        'created' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'updated' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'locked' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+      ),
+      'primary_key' => array('machine_name'),
+      'indexes' => array('file' => array('file')),
+    ),
+  );
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function lulzbot_dev_content_uninstall() {
+  $content = realpath(DRUPAL_ROOT . '/../resources/content');
+
+  // delete dev content
+  // lulzbot_dev_content_rollback($content);
+}

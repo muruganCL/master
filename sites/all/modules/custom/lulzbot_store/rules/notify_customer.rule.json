@@ -1,0 +1,21 @@
+{ "rules_notify_customer_about_complete_order" : {
+    "LABEL" : "Notify customer about complete order",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "REQUIRES" : [ "rules", "entity" ],
+    "ON" : { "commerce_order_update" : [] },
+    "IF" : [
+      { "data_is" : { "data" : [ "commerce-order:status" ], "value" : "completed" } },
+      { "NOT data_is" : { "data" : [ "commerce-order-unchanged:status" ], "value" : "completed" } }
+    ],
+    "DO" : [
+      { "mail" : {
+          "to" : [ "commerce-order:mail" ],
+          "subject" : "Your LulzBot.com Order has Shipped!",
+          "message" : "Your LulzBot.com order #[commerce-order:order-number] has shipped.",
+          "language" : [ "" ]
+        }
+      }
+    ]
+  }
+}

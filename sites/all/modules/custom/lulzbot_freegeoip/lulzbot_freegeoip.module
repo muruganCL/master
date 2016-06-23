@@ -1,0 +1,188 @@
+<?php
+
+/**
+ * @file
+ * Main .module file for the lulzbot_geoip module.
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Provides a configuration page for this module.
+ */
+function lulzbot_freegeoip_menu() {
+  $items['admin/config/services/freegeoip'] = array(
+    'title' => t('FreeGeoIp'),
+    'description' => t('Configure FreeGeoIp'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('lulzbot_freegeoip_config_form'),
+    'access arguments' => array('configure freegeoip'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implement hook_permission().
+ *
+ * Defines permissions for configuring this module.
+ */
+function lulzbot_freegeoip_permissions() {
+  return array(
+    'configure freegeoip' => array(
+      'title' => t('Configure the FreeGeoIp module'),
+      'description' => t('Allows a user to configure the FreeGeoIp module'),
+    ),
+  );
+}
+
+/**
+ * Provides a module configuration page.
+ */
+function lulzbot_freegeoip_config_form($form, $form_state) {
+  $form['lulzbot_freegeoip_host'] = array(
+    '#title' => t('Endpoint Host'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('lulzbot_freegeoip_host', 'localhost'),
+    '#required' => TRUE,
+    '#description' => t('Hostname or IP to use to connect to a freegeoip api instance.'),
+  );
+
+  $form['lulzbot_freegeoip_port'] = array(
+    '#title' => t('Endpoint Port'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('lulzbot_freegeoip_port', '8080'),
+    '#required' => TRUE,
+    '#description' => t('Port on which to connect to a freegeoip api instance.'),
+    '#element_validate' => array('element_validate_integer_positive'), 
+  );
+
+  $form['lulzbot_freegeoip_https'] = array(
+    '#title' => t('HTTPS'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('lulzbot_freegeoip_https', 0),
+    '#description' => t('Does the endpoint support HTTPS?'),
+  );
+
+  $form['lulzbot_freegeoip_set_cookies'] = array(
+    '#title' => t('Set Cookies'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('lulzbot_freegeoip_set_cookies', 1),
+    '#description' => t('Should cookies be set for use in front-end code?'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_init().
+ *
+ * Sets a location cookie if the feature is enabled.
+ */
+function lulzbot_freegeoip_init() {
+  if (variable_get('lulzbot_freegeoip_set_cookies')) {
+    $location = lulzbot_freegeoip_get_location();
+  }
+
+  // Implementation specific code here. Can remove and make this module generic.
+  if (!isset($_COOKIE['lulzbot_store_location']) && isset($location->country_code)) {
+    // Borrowed from user_cookie_save().
+    setrawcookie(
+      'lulzbot_store_location', 
+      rawurlencode($location->country_code),
+      REQUEST_TIME + 31536000,
+      '/'
+    );
+  }
+}
+
+/**
+ * Return an array containing IP based location information.
+ *
+ * @param $reset bool
+ *   Do a fresh lookup, ignoring cache and cookies.
+ */
+function lulzbot_freegeoip_get_location($reset = FALSE) {
+  if ($reset) {
+    drupal_static_reset('lulzbot_freegeoip_location');
+    user_cookie_delete('lulzbot_freegeoip_location');
+  }
+
+  return _lulzbot_freegeoip_get_location();
+}
+
+/**
+ * Helper function for lulzbot_freegeoip_get_location.
+ */
+function _lulzbot_freegeoip_get_location() {
+  // Check drupal static for location data, return if we have it.
+  if ($location = &drupal_static('lulzbot_freegeoip_location', NULL)) {
+    return $location;
+  }
+
+  // Check cookie data for location data, return if we have it.
+  if (variable_get('lulzbot_freegeoip_set_cookies') && isset($_COOKIE['lulzbot_freegeoip_location'])) {
+    return $location = json_decode(base64_decode($_COOKIE['lulzbot_freegeoip_location']));
+  }
+
+  // Since we don't have the location cached or in a cookie, look it up.
+
+  // Construct the base url for the API.
+  $protocol = (variable_get('lulzbot_freegeoip_https', 0)) ? 'https' : 'http';
+  $freegeoip_url = url(sprintf(
+    '%s://%s:%s/json',
+    $protocol,
+    check_plain(variable_get('lulzbot_freegeoip_host', 'localhost')),
+    check_plain(variable_get('lulzbot_freegeoip_port', '8080'))
+  ));
+
+  // Get the ip of the current user.
+  // @todo: handle reverse proxy case where this will be incorrect 
+  $ip = (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) ? $_SERVER['HTTP_X_FORWARDED_FOR'] : $_SERVER['REMOTE_ADDR'];
+
+  // Perform the API request and set the static variable.
+  $location = _lulzbot_freegeoip_do_request($freegeoip_url, $ip);
+
+  // Set the cookie if we should.
+  if (variable_get('lulzbot_freegeoip_set_cookies')) {
+    user_cookie_save(array(
+      'lulzbot_freegeoip_location' => base64_encode(json_encode($location))
+    ));
+  }
+
+  return $location;
+}
+
+/**
+ * Perform the actual request against the FreeGeoIp API.
+ */
+function _lulzbot_freegeoip_do_request($freegeoip_url, $ip) {
+  $request_url = sprintf(
+    '%s/%s',
+    $freegeoip_url,
+    check_plain($ip)
+  );
+
+  $response = drupal_http_request($request_url);
+
+  if (isset($response->error)) {
+    watchdog(
+      'lulzbot_freegeoip',
+      "Could not fetch location data for ip: @ip\nError: @error\nResponse: @resp",
+      array(
+        '@ip' => $ip,
+        '@error' => $response->error,
+        '@resp' => var_export($response, TRUE),
+      ),
+      WATCHDOG_ERROR
+    );
+
+    $location = array();
+  }
+  else {
+    $location = json_decode($response->data);
+  }
+
+  return $location;
+}

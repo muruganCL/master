@@ -1,0 +1,1 @@
+!function(e){Drupal.behaviors.referencesDialogChild={attach:function(e,n){var a=parseInt(n.ReferencesDialog.entity_id),i=n.ReferencesDialog.entity_type,r=n.ReferencesDialog.title;null!=a&&0!=a&&parent.Drupal.ReferencesDialog.close(i,a,r)}}}(jQuery);

@@ -1,0 +1,131 @@
+#flexiselDemo1, #flexiselDemo2, #flexiselDemo3 {
+display:none;
+}
+
+.carousel-container {
+    position:relative;
+    max-width:100%;
+    overflow: hidden;
+    @include clearfix;
+
+    &.no-arrows {
+      .carousel-nav-left,
+      .carousel-nav-right {
+
+      }
+    }
+}
+.carousel-ul {
+    position:relative;
+    width:9999px;
+    margin:0px;
+    padding:0px;
+    list-style-type:none;
+}
+
+.carousel-inner {
+    overflow:hidden;
+    margin-left: rhythm(4);
+    margin-right: rhythm(4);
+}
+
+.carousel > li {
+    float:left;
+    margin:0px;
+    padding:0px;
+    cursor:pointer;
+    position:relative;
+    line-height:0px;
+}
+.carousel-item img {
+    cursor: pointer;
+    position: relative;
+    // margin-top: 10px;
+    // margin-bottom: 10px;
+    // max-width:100px;
+    // max-height:45px;
+}
+
+/*** Navigation ***/
+
+.carousel-nav-left,
+.carousel-nav-right {
+    position: absolute;
+    cursor: pointer;
+    z-index: 100;
+    opacity: 0.5;
+}
+
+.carousel-nav-left {
+  left: 6px;
+  top: 50%;
+  width: 30px;
+  height: 113px;
+  margin-top: -15px;
+  transition: opacity .3s ease-in-out;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 50%;
+    height: 61px;
+    width: 2px;
+    background-color: $gray-light;
+    transform: rotate(30deg);
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    right: 50%;
+    height: 61px;
+    width: 2px;
+    background-color: $gray-light;
+    transform: rotate(-30deg);
+  }
+  &:hover {
+    opacity: 1;
+    &:before,
+    &:after {
+      background-color: $green;
+    }
+  }
+}
+
+.carousel-nav-right {
+  right: 6px;
+  top: 50%;
+  width: 30px;
+  height: 113px;
+  margin-top: -15px;
+
+  transition: opacity .3s ease-in-out;
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    height: 61px;
+    width: 2px;
+    background-color: $gray-light;
+    transform: rotate(-30deg);
+  }
+  &:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    height: 61px;
+    width: 2px;
+    background-color: $gray-light;
+    transform: rotate(30deg);
+  }
+  &:hover {
+    opacity: 1;
+    &:before,
+    &:after {
+      background-color: $green;
+    }
+  }
+}

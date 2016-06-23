@@ -1,0 +1,224 @@
+<?php
+/**
+ * Implements hook_element_info_alter().
+ *
+ * Sets the text format processor to a custom callback function.
+ * This code is taken from the Better Formats module.
+ */
+function lulzbot_base_element_info_alter(&$type) {
+  if (isset($type['text_format']['#process'])) {
+    foreach ($type['text_format']['#process'] as &$callback) {
+      if ($callback === 'filter_process_format') {
+        $callback = 'lulzbot_base_filter_process_format';
+      }
+    }
+  }
+}
+
+/**
+ * Sets text formats to default values for various fields
+ */
+function lulzbot_base_filter_process_format($element) {
+  $element = filter_process_format($element);
+  if (isset($element['#bundle'])) {
+    // create an array of bundle => array(fields)
+    $bundles = module_invoke_all('lulzbot_set_text_formats');
+    // is this an element we're interested in?
+    if (in_array($element['#bundle'], array_keys($bundles))) {
+      if (isset($element['#field_name']) && in_array($element['#field_name'], array_keys($bundles[$element['#bundle']]))) {
+        // this is the element we're looking for
+        $element['format']['format']['#default_value'] = $bundles[$element['#bundle']][$element['#field_name']];
+      }
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_image_default_styles().
+ */
+function lulzbot_base_image_default_styles() {
+
+  $styles = array();
+
+  $styles['review_tiny'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => 85, 'height' => ''),
+        'weight' => 0,
+      ),
+      array(
+        'name' => 'image_desaturate',
+      ),
+    )
+  );
+
+  $styles['feature_tiny'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 200, 'height' => 150),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['product_thumbnail'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 165, 'height' => 123.75),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['product_large'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => '', 'height' => 850),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['product_teaser'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 400, 'height' => 285),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['feature2'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => 500, 'height' => '', 'upscale' => 0),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['showcase'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 375, 'height' => 305),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['filament_color'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale_and_crop',
+        'data' => array('width' => 34, 'height' => 34),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  $styles['extra_large'] = array(
+    'effects' => array(
+      array(
+        'name' => 'image_scale',
+        'data' => array('width' => 950, 'height' => '', 'upscale' => 0),
+        'weight' => 0,
+      ),
+    )
+  );
+
+  return $styles;
+
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function lulzbot_base_entity_info_alter(&$entity_info) {
+  /*
+   * Shorthand definition of view modes.
+   *
+   * A keyed array of entity types and an array of its custom view modes.
+   * View modes are defined as machine name and label key=>value pairs.
+   */
+  $display_view_modes = array(
+    'node' => array(
+      'feature' => 'Feature',
+      'simple' => 'Simple',
+      'promo' => 'Promo',
+      'compare' => 'Compare',
+    ),
+    'bean' => array(
+      'teaser' => 'Teaser',
+    ),
+  );
+
+  // Loop through entities
+  foreach ($display_view_modes as $entity => $modes) {
+    // Loop through view modes
+    foreach ($modes as $machine_name => $label) {
+      $entity_info[$entity]['view modes'][$machine_name] = array(
+        'label' => t($label),
+        'custom settings' => FALSE,
+      );
+    }
+  }
+
+}
+
+/**
+ * Creates Beans from HTML templates based on Bean name.
+ *
+ * Takes array of Beans, keyed by name, with arrays of title, label keys and
+ * data array.
+ */
+function lulzbot_base_create_general_beans($general_beans, $module, $type = 'general', $field_name = 'field_bean_general_text') {
+  if (module_exists('cinc') && module_exists('bean')) {
+    foreach ($general_beans as $general_bean_name => $item) {
+      CINC::init('Bean')->machine_name($general_bean_name)
+        ->set('type', $type)
+        ->set('label', $item['label'])
+        ->set('title', $item['title'])
+        ->create_or_update();
+      $bean = bean_load_delta($general_bean_name, TRUE);
+      $filepath = drupal_get_path('module', $module) . '/templates/' . $module . '--' . $general_bean_name . '.html';
+      if ($field_name && file_exists($filepath) && isset($bean->{$field_name})) {
+        $bean->{$field_name}[LANGUAGE_NONE][0]['value'] = file_get_contents($filepath);
+        $bean->{$field_name}[LANGUAGE_NONE][0]['format'] = 'full_html';
+      }
+      bean_save($bean);
+    }
+  }
+}
+
+function lulzbot_base_date_format_types() {
+  return array(
+    'long' => t('Long'),
+    'medium' => t('Medium'),
+    'short' => t('Short'),
+    'lulzbot_full' => t('Lulzbot Full'),
+  );
+}
+
+function lulzbot_base_date_formats() {
+  variable_set('date_format_' . 'lulzbot_full', 'F j, Y');
+  return array(
+    array(
+      'type' => 'lulzbot_full',
+      'format' => 'F j, Y',
+      'locales' => array(),
+    ),
+  );
+}
+
+function lulzbot_base_lulzbot_set_text_formats() {
+
+}

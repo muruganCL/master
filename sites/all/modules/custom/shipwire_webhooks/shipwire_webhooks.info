@@ -1,0 +1,7 @@
+name = Shipwire Webhooks
+description = Integrate Drupal with Shipwire webhooks
+core = 7.x
+
+dependencies[] = shipwire_api
+
+files[] = shipwire_webhooks.admin.inc

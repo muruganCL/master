@@ -1,0 +1,16 @@
+name = LulzBot Products
+description = Product configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = cinc_commerce
+dependencies[] = lulzbot_base
+dependencies[] = lulzbot_showcase
+dependencies[] = field_group
+dependencies[] = link
+dependencies[] = entityreference
+dependencies[] = pathauto
+dependencies[] = field_collection
+dependencies[] = video_embed_field
+dependencies[] = references_dialog
+dependencies[] = italics_text_filter
+dependencies[] = telephone

@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Installation and update actions for the lulzbot_store_ui module.
+ */
+
+/**
+ * Disable the default customer orders view.
+ */
+function lulzbot_store_ui_enable() {
+	// grab list of views that are already disabled
+  $disabled_views = variable_get('views_defaults', array());
+  // add our views to be disabled to the list
+  $disabled_views['commerce_user_orders'] = TRUE;
+  // reset the variable with the new list
+  variable_set('views_defaults', $disabled_views);
+  // empty cache now
+  if (function_exists('views_invalidate_cache')) {
+  	views_invalidate_cache();
+  }
+}

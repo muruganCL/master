@@ -1,0 +1,74 @@
+//
+// Basic page layout styles.
+//
+
+#content {
+  .block {
+    .front & {
+      margin-top: vrem(8);
+      @include bp(large) {
+        margin-top: vrem(16);
+      }
+    }
+  }
+  #block-bean-homepage-home-cta {
+    margin-top: 0;
+  }
+}
+
+// Promo's
+.featured-promo {
+  .view-content {
+    @include grid('.views-row', 2);
+    margin-bottom: vrem(6);
+
+    @include bp(medium) {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .promo {
+      min-height: 400px;
+    }
+  }
+}
+
+.promos {
+  > .view-content {
+    @include grid('.views-row', 3);
+    margin-bottom: vrem(8);
+
+    @include bp(medium) {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: stretch;
+    }
+
+    .promo {
+      min-height: 330px;
+    }
+  }
+}
+
+
+// Home Triangles
+.top-triangle {
+  @include bp(large) {
+    @include top-triangle(465px, 218px, $green, .6);
+  }
+
+  @include bp(printer--larger) {
+    @include top-triangle(800px, 375px, $green, .6);
+  }
+}
+.top-triangle-small {
+
+  @include bp(large) {
+    @include top-triangle(400px, 188px, $green, .6);
+  }
+
+  @include bp(printer--larger) {
+    @include top-triangle(640px, 300px, $green, .6);
+  }
+}

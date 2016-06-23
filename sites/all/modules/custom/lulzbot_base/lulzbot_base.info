@@ -1,0 +1,8 @@
+name = LulzBot Base
+description = Base configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = lulzbot_deploy
+dependencies[] = lulzbot_base_config
+dependencies[] = context
+dependencies[] = italics_text_filter

@@ -1,0 +1,390 @@
+<?php
+
+/**
+ * Implements hook_cinc_display_apply().
+ */
+function lulzbot_products_config_cinc_display_apply() {
+
+  // update default/full settings for the page content type
+  CINCDisplay::init('merchandise')
+    ->field('body', 'text_default')
+    ->field('field_merchandise_learning_links', 'link_default')
+    ->field('field_merchandise_images', array(
+      'type' => 'photoswipe',
+    ))
+    ->field('field_merchandise_note_title', 'text_default')
+    ->field('field_merchandise_note_body', 'text_default')
+    ->field('field_product_reference', array(
+        'type' => 'commerce_add_to_cart_form',
+        'settings' => array(
+          'show_quantity' => 1
+        ),
+      ))
+    ->field('field_merchandise_related_prods', array(
+      'type' => 'entityreference_entity_view',
+      'settings' => array(
+        'view_mode' => 'feature',
+        'links' => 0,
+      ),
+    ))
+    ->field('field_merchandise_reviews', array(
+      'type' => 'field_collection_view',
+      'settings' => array(
+        'edit' => '',
+        'delete' => '',
+        'add' => '',
+      ),
+    ))
+    ->field('product:field_product_tshirt_type', array(
+      'type' => 'hidden',
+    ))
+    ->field('product:field_product_tshirt_colors', array(
+      'type' => 'hidden',
+    ))
+    ->field('product:field_product_tshirt_sizes', array(
+      'type' => 'hidden',
+    ))
+    ->field('field_merchandise_alerts', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_merchandise_video', 'video_embed_field')
+    ->field('field_merchandise_video_title', 'text_default')
+    ->field('field_merch_video_description', 'text_default')
+    ->field('field_radioactivity', 'radioactivity_combo_formatter')
+    ->update();
+
+    CINCDisplay::init('merchandise', 'feature')
+    ->field('field_merchandise_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'feature_tiny',
+        ),
+      ))
+    ->field('product:field_product_tshirt_image', 'hidden')
+    ->update();
+
+  CINCDisplay::init('merchandise', 'teaser')
+    ->field('field_merchandise_images', array(
+        'type' => 'image',
+        'settings' => array(
+          'image_style' => 'product_teaser',
+          'image_link' => 'content',
+        ),
+      ))
+    ->update();
+
+  // Parts display settings
+  CINCDisplay::init('part')
+    ->field('body', 'text_default')
+    ->field('field_part_images', array(
+        'type' => 'photoswipe',
+      ))
+    ->field('field_part_ease_of_use', array(
+        'type' => 'taxonomy_term_reference_plain',
+      ))
+    ->field('field_part_features', 'text_default')
+    ->field('field_part_specifications', 'text_default')
+    ->field('field_part_documentation', 'text_default')
+    ->field('field_part_learning_links', 'link_default')
+    ->field('field_part_compatible_printers', 'taxonomy_term_reference_plain')
+    ->field('field_part_reviews', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_part_related_products', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_product_reference', array(
+        'type' => 'commerce_add_to_cart_form',
+        'settings' => array(
+          'show_quantity' => 1
+        ),
+      ))
+    ->field('field_part_alerts', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_part_project_showcase', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_part_video', 'video_embed_field')
+    ->field('field_part_video_title', 'text_default')
+    ->field('field_part_video_description', 'text_default')
+    ->field('field_radioactivity', 'radioactivity_combo_formatter')
+    ->update();
+
+  CINCDisplay::init('part', 'feature')
+    ->field('field_part_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'feature_tiny',
+        ),
+      ))
+    ->update();
+
+    CINCDisplay::init('part', 'teaser')
+    ->field('field_part_images', array(
+        'type' => 'image',
+        'settings' => array(
+          'image_style' => 'product_teaser',
+          'image_link' => 'content',
+        ),
+      ))
+    ->update();
+
+  // Tool head display settings
+  CINCDisplay::init('tool_head')
+    ->field('body', 'text_default')
+    ->field('field_tool_head_images', array(
+        'type' => 'photoswipe',
+      ))
+    ->field('field_tool_head_ease_of_use', array(
+        'type' => 'taxonomy_term_reference_plain',
+      ))
+    ->field('field_tool_head_features', 'text_default')
+    ->field('field_tool_head_specifications', 'text_default')
+    ->field('field_tool_head_documentation', 'text_default')
+    ->field('field_tool_head_learning_links', 'link_default')
+    ->field('field_tool_head_compatiblity', 'taxonomy_term_reference_plain')
+    ->field('field_tool_head_reviews', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_tool_head_related_products', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_product_reference', array(
+        'type' => 'commerce_add_to_cart_form',
+        'settings' => array(
+          'show_quantity' => 1
+        ),
+      ))
+    ->field('field_tool_head_alerts', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_tool_head_project_showcase', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_tool_head_video', 'video_embed_field')
+    ->field('field_tool_head_video_title', 'text_default')
+    ->field('field_th_video_description', 'text_default')
+    ->field('field_radioactivity', 'radioactivity_combo_formatter')
+    ->update();
+
+  CINCDisplay::init('tool_head', 'teaser')
+    ->field('field_tool_head_images', array(
+        'type' => 'image',
+        'settings' => array(
+          'image_style' => 'product_teaser',
+          'image_link' => 'content',
+        ),
+      ))
+    ->update();
+
+  CINCDisplay::init('tool_head', 'feature')
+    ->field('field_tool_head_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'feature_tiny',
+        ),
+      ))
+    ->update();
+
+  // Filament
+  CINCDisplay::init('filament')
+    ->field('body', 'text_default')
+    ->field('field_filament_width', 'taxonomy_term_reference_plain')
+    ->field('field_filament_weight', 'taxonomy_term_reference_plain')
+    ->field('field_filament_supplier', 'link_default')
+    ->field('field_filament_compatiblity', 'taxonomy_term_reference_plain')
+    ->field('field_filament_images', array(
+        'type' => 'photoswipe',
+      ))
+    ->field('field_filament_ease_of_use', array(
+        'type' => 'taxonomy_term_reference_plain',
+      ))
+    ->field('field_filament_features', 'text_default')
+    ->field('field_filament_specifications', 'text_default')
+    ->field('field_filament_documentation', 'text_default')
+    ->field('field_filament_learning_links', 'link_default')
+    ->field('field_filament_reviews', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_filament_related_filaments', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_product_reference', array(
+        'type' => 'commerce_add_to_cart_form',
+        'settings' => array(
+          'show_quantity' => 1
+        ),
+      ))
+    ->field('field_filament_alerts', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_filament_project_showcase', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+          'links' => 0,
+        ),
+      ))
+    ->field('field_filament_video', 'video_embed_field')
+    ->field('field_filament_video_title', 'text_default')
+    ->field('field_filament_video_description', 'text_default')
+    ->field('field_radioactivity', 'radioactivity_combo_formatter')
+    ->update();
+
+  CINCDisplay::init('filament', 'feature')
+    ->field('field_filament_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'feature_tiny',
+        ),
+      ))
+    ->field('field_filament_supplier', 'link_default')
+    ->update();
+
+  CINCDisplay::init('filament', 'teaser')
+    ->field('field_filament_images', array(
+        'type' => 'image',
+        'settings' => array(
+          'image_style' => 'product_teaser',
+          'image_link' => 'content',
+        ),
+      ))
+    ->field('field_filament_supplier', 'link_default')
+    ->update();
+
+  // Printer display settings
+  CINCDisplay::init('printer')
+    ->field('field_printer_parts_specs1', 'text_default')
+    ->field('field_printer_parts_specs2', 'text_default')
+    ->field('field_printer_parts_specs3', 'text_default')
+    ->field('field_printer_fc1_text', 'text_default')
+    ->field('field_printer_fc1_description', 'text_default')
+    ->field('field_printer_fc2_text', 'text_default')
+    ->field('field_printer_fc2_description', 'text_default')
+    ->field('field_printer_fc2_rel_title', 'text_default')
+    ->field('field_printer_fc3_text', 'text_default')
+    ->field('field_printer_fc3_description', 'text_default')
+    ->field('field_printer_fc3_description', 'text_default')
+    ->field('field_printer_fc3_description', 'text_default')
+    ->field('field_printer_fc1_link', 'link_default')
+    ->field('field_printer_fc2_link', 'link_default')
+    ->field('field_printer_fc3_link', 'link_default')
+    ->field('field_printer_fc3_video', 'video_embed_field')
+    ->field('body', 'text_default')
+    ->field('field_printer_images', array(
+      'type' => 'photoswipe',
+    ))
+    ->field('field_printer_ease_of_use', 'taxonomy_term_reference_plain')
+    ->field('field_printer_reviews', array(
+        'type' => 'field_collection_view',
+        'settings' => array(
+          'edit' => '',
+          'delete' => '',
+          'add' => '',
+        ),
+      ))
+    ->field('field_product_reference', 'commerce_add_to_cart_form')
+    ->field('field_printer_fc2_image', 'image')
+    ->field('field_printer_fc3_image', 'image')
+    ->setImageStyle('field_printer_fc2_image', 'feature2')
+    ->field('field_printer_fc2_products', array(
+        'type' => 'entityreference_entity_view',
+        'settings' => array(
+          'view_mode' => 'feature',
+        ),
+      ))
+    ->field('field_radioactivity', 'radioactivity_combo_formatter')
+    ->update();
+
+  CINCDisplay::init('printer', 'compare')
+    ->field('field_printer_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'large',
+        )
+      ))
+    ->field('field_printer_ease_of_use', 'taxonomy_term_reference_plain')
+    ->update();
+
+  CINCDisplay::init('printer', 'feature')
+    ->field('field_printer_images', array(
+        'type' => 'image_delta',
+        'settings' => array(
+          'image_style' => 'showcase',
+        ),
+      ))
+    ->update();
+
+  // Showcase
+  CINCDisplay::init('showcase', 'feature')
+    ->field('field_showcase_image', array(
+      'type' => 'image',
+      'settings' => array(
+        'image_style' => 'showcase',
+      ),
+      ))
+    ->field('field_showcase_user')
+    ->update();
+
+  // Article
+  CINCDisplay::init('article')
+    ->field('body')
+    ->field('field_tags')
+    ->update();
+}

@@ -1,0 +1,38 @@
+<?php
+/**
+ * Implements hook_enable().
+ */
+function lulzbot_search_enable() {
+  // let users search
+  $roles = array('anonymous user', 'authenticated user', 'administrator');
+  foreach ($roles as $role) {
+    $this_role = user_role_load_by_name($role);
+    user_role_grant_permissions($this_role->rid, array('search content', 'use advanced search'));
+  }
+
+  variable_set('search_default_module', 'apachesolr_search');
+  variable_set('search_active_modules', array(
+    'apachesolr_search' => 'apachesolr_search',
+    'node' => 0,
+    'user' => 0,
+  ));
+
+  $search_context = CINC::init('Context')
+    ->machine_name('search');
+  if (!$search_context->exists()) {
+    $search_context
+      ->create();
+  }
+
+  // enable the bundle facet
+  $searcher = 'apachesolr@solr';
+  $adapter = facetapi_adapter_load($searcher);
+  facetapi_save_facet_enabled($adapter, facetapi_realm_load('block'), facetapi_facet_load('bundle', $searcher));
+
+  $search_context
+    ->set('tag', 'page')
+    ->add_path_condition(array('search/site/*'))
+    ->add_block_reaction('facetapi', facetapi_hash_delta(facetapi_build_delta($searcher, 'block', 'bundle')), 'sidebar_first', 0)
+    ->update();
+
+}

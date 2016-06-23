@@ -1,0 +1,10 @@
+name = Commerce Signifyd
+description = commerce_signifyd module
+core = 7.x
+
+dependencies[] = signifyd
+dependencies[] = commerce
+dependencies[] = rules
+dependencies[] = entity
+
+files[] = commerce_signifyd.rules.inc

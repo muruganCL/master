@@ -1,0 +1,260 @@
+//
+// @file
+// Breakpoint variables.
+//
+
+//
+// Typefaces.
+//
+$ff-mono:  monospace;
+$ff-sans: 'titillium_regular', sans-serif;
+$ff-serif: serif;
+$ff-titillium-semibold: 'titillium_semibold', sans-serif;
+$ff-lato-bold: 'latobold', sans-serif;
+$ff-lato-regular: 'latoregular', sans-serif;
+$ff-lato-light: 'latolight', sans-serif;
+$ff-lato-black: 'latoblack', sans-serif;
+
+//
+// Semantic fonts.
+//
+$ff-body:    $ff-sans;
+$ff-heading: 'titillium_regular';
+$ff-display: $ff-heading;
+
+//
+// Responsive font-size map.
+//
+$font-sizes: (
+  // Body Copy
+  body--tiny: (
+    default: 14px 18px,
+    small: 16px 21px
+  ),
+  body--small: (
+    default: 16px 21px,
+    small: 18px 24px
+  ),
+  body: (
+    default: 16px 21px,
+    small: 20px 26px
+  ),
+  body--large: (
+    default: 18px 24px,
+    small: 22px 27px
+  ),
+  body--huge: (
+    default: 20px 24px,
+    small: 28px 36px
+  ),
+  // Headings
+  heading--micro: (
+    default: 16px 20px,
+    small: 18px 22px
+  ),
+  heading--tiny: (
+    default: 16px 21px,
+    small: 22px 28px
+  ),
+  heading--small: (
+    default: 18px 24px,
+    small: 24px 30px
+  ),
+  heading: (
+    default: 22px 28px,
+    small: 33px 36px
+  ),
+  heading--large: (
+    default: 24px 30px,
+    small: 42px 48px
+  ),
+  heading--huge: (
+    default: 34px 40px,
+    small: 44px 50px,
+    medium: 54px 60px
+  ),
+  heading--thin: (
+    default: 30px 36px,
+    small: 36px 42px,
+  ),
+  heading--section: (
+    default: 26px 32px,
+    small: 30px 36px,
+  ),
+  compare--printer-title: (
+    default: 26px 28px,
+    small: 30px 34px,
+  ),
+  link--tiny: (
+    default: 12px 16px,
+    x-large: 13px 17px,
+    2x-large: 16px 20px,
+  ),
+  link--small: (
+    default: 14px 18px,
+    small: 14px 18px,
+  ),
+  link: (
+    default: 13px 19px,
+    // small: 18px 24px
+  ),
+  link--large: (
+    default: 18px 24px,
+    medium: 24px 22px
+  ),
+  link--huge: (
+    default: 18px 24px,
+    small: 24px 30px
+  ),
+  link--go: (
+    default: 16px 21px,
+    small: 18px 24px,
+    medium: 20px 26px,
+  ),
+  // Titles
+  title--small: (
+    default: 16px 21px,
+    small: 18px 24px
+  ),
+  title: (
+    default: 18px 24px,
+    small: 24px 30px
+  ),
+  title--large: (
+    default: 24px 27px,
+    small: 32px 36px
+  ),
+  title--huge: (
+    default: 27px 36px,
+    small: 42px 54px,
+    medium: 48px 60px
+  ),
+  block--title: (
+    default: 22px 26px,
+    small: 30px 36px,
+  ),
+  // Menu
+  header-nav: (
+    default: 15px 21px,
+    small: 16px 22px,
+  ),
+  utility-nav: (
+    default: 14px 32px,
+    small: 14px 32px,
+  ),
+  // Products
+  price: (
+    default: 32px 22px,
+    small: 40px 30px,
+  ),
+  price--tiny: (
+    default: 18px 17px,
+  ),
+  price--large: (
+    default: 27px 18px,
+    small: 42px 30px,
+    medium: 48px 37px,
+  ),
+  product-info--small: (
+    default: 16px 21px,
+    small: 18px 26px
+  ),
+  // Reviews
+  review--content: (
+    default: 18px 26px,
+  ),
+  review--author: (
+    default: 16px 40px,
+  ),
+  // Misc
+  cart--icon: (
+    default: 13px 18px,
+    small: 13px 18px,
+  ),
+  date: (
+    default: 14px 18px,
+    small: 16px 21px
+  ),
+  review-promo-link: (
+    default: 14px 19px,
+  ),
+  promo-type: (
+    default: 14px 32px,
+    small: 14px 32px,
+  ),
+  promo-content: (
+    default: 16px 21px,
+    small: 16px 21px,
+    medium: 17px 23px
+  ),
+  marquee-body: (
+    default: 26px 32px,
+    small: 26px 32px,
+    medium: 26px 32px,
+    x-large: 30px 36px,
+  ),
+  callout-title: (
+    default: 28px 34px,
+    small: 34px 36px,
+  ),
+  accordion-toggle: (
+    default: 26px 40px,
+    small: 30px 40px,
+  ),
+  filament-color: (
+    default: 14px 18px,
+    small: 14px 18px,
+  ),
+  table-cell: (
+    default: 20px 24px,
+    small: 24px 30px,
+  ),
+);
+
+//
+// Font size.
+//
+$fs-xs:      14px;
+$fs-s:       16px;
+$fs-m:       18px;
+$fs-l:       22px;
+$fs-xl:      24px;
+$fs-2xl:     30px;
+$fs-3xl:     32px;
+$fs-4xl:     42px;
+$fs-5xl:     48px;
+
+//
+// Semantic font size.
+//
+$fs-h1: $fs-3xl !default;
+$fs-h2: $fs-2xl !default;
+$fs-h3: $fs-xl !default;
+$fs-h4: $fs-m !default;
+$fs-h5: $fs-s !default;
+$fs-h6: $fs-s !default;
+
+//
+// Font Weights
+//
+$fw-thin: 100;
+$fw-light: 300;
+$fw-regular: 400;
+$fw-book: 400;
+$fw-medium: 500;
+$fw-semibold: 600;
+$fw-bold: 600;
+
+//
+// Indentation.
+//
+$indent-amount: 3em !default;
+
+//
+// Vertical rhythm.
+//
+$base-font-size:    $fs-m;       // Font-size of your body copy.
+$base-line-height:  6px;         // Setting the base-line-height half.
+                                 // the height of the desired body copy.
+                                 // line-height helps prevent sparse.
+                                 // leading at different font-sizes.

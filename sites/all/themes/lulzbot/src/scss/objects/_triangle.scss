@@ -1,0 +1,7 @@
+//
+// Triangles
+//
+
+.top-triangle-left {
+  @include top-triangle-left(950px, 500px, $gray-lightest, .4);
+}

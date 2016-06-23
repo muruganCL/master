@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * CincDisplayDrupalTests tests
+ */
+class CincDisplayDrupalTests extends DrupalWebTestCase {
+  /**
+   * Simple test info
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'CINC Display',
+      'description' => 'Test Drupal specific CINC display functionality',
+      'group' => 'cinc',
+    );
+  }
+
+  /**
+   * Setup
+   */
+  public function setUp() {
+    parent::setUp(array('field', 'cinc', 'cinc_display'));
+
+    $field_cinc = CINC::init('TextField')
+      ->machine_name('field_cinc')
+      ->set_instance('label', 'CINC')
+      ->create();
+
+    CINC::init('ContentType')
+      ->machine_name('cinc')
+      ->set('title_label', 'CINC')
+      ->create()
+      ->add_field($field_cinc);
+  }
+
+  /**
+   * Tear it down
+   */
+  public function tearDown() {
+    parent::tearDown();
+
+    CINC::init('TextField')
+      ->machine_name('field_cinc')
+      ->delete_and_purge();
+  }
+
+  /**
+   * Test adding field settings without any settings.
+   */
+  public function testFieldDefaults() {
+    $display = CINCDisplay::init('cinc', 'teaser')
+      ->field('field_cinc');
+    $this->assertEqual($display->settings['field_cinc']['type'], 'text_default');
+  }
+}

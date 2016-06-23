@@ -1,0 +1,12 @@
+//
+// Promo
+//
+
+@mixin promo-type {
+  @include font-size(promo-type);
+  font-family: $ff-lato-bold;
+  text-transform: uppercase;
+  color: $gray-darker;
+  opacity: 1;
+  transition: all .3s ease-in-out;
+}

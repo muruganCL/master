@@ -1,0 +1,248 @@
+<?php
+
+/**
+ * Implement hook_field_attach_view_alter().
+ *
+ * Attaches extra fields to nodes.
+ */
+function lulzbot_product_field_attach_view_alter(&$output, $context) {
+  // Bail if this isn't a node.
+  if (!isset($context['entity_type']) || $context['entity_type'] != 'node') {
+    return;
+  }
+
+  $entity_type = $context['entity_type'];
+  $entity = $context['entity'];
+  $langcode = ($context['language']) ? $context['language'] : LANGUAGE_NONE;
+
+  $extra_fields = field_info_extra_fields(
+    $entity_type,
+    $entity->type,
+    'display');
+
+  $extra_fields = array_filter(
+    $extra_fields,
+    '_lulzbot_product_filter_active_fields');
+
+  foreach ($extra_fields as $field_name => $extra_field) {
+    // Don't do anything if this isn't our extra field.
+    if (!isset($extra_field['module']) || $extra_field['module'] != 'lulzbot_product') {
+      continue;
+    }
+
+    if (isset($extra_field['callback']) && function_exists($extra_field['callback'])) {
+      $extra_field['callback']($output, $entity, $extra_field, $langcode);
+    }
+  }
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ *
+ * Provides extra fields on commerce products.
+ */
+function lulzbot_product_field_extra_fields() {
+  $bundles = field_info_bundles('commerce_product');
+
+  $extra_fields = array();
+  foreach (commerce_info_fields('commerce_product_reference') as $field_name => $field) {
+    foreach ($field['bundles'] as $entity_type => $bundles) {
+      if ($entity_type == 'commerce_line_item' || $entity_type == 'commerce_product') {
+        // We do not currently support the injection of product fields into the
+        // display of line items or other products.
+        continue;
+      }
+
+      foreach ($bundles as $bundle_name) {
+        // Build out an array of our new extra fields.
+        _lulzbot_product_build_extra_fields($extra_fields, $bundle_name);
+      }
+    }
+  }
+
+  // Make sure that any new fields are hidden by default.
+  $product_types = array_keys($extra_fields['node']);
+  foreach ($product_types as $product_type) {
+    $field_names = array_keys($extra_fields['node'][$product_type]['display']);
+    foreach ($field_names as $field_name) {
+      _lulzbot_product_hide_new_field(
+        'node',
+        $product_type,
+        $field_name
+      );
+    }
+  }
+
+  return $extra_fields;
+}
+
+function lulzbot_product_extra_field_callback(&$output, $entity, $extra_field, $langcode) {
+  $product = entity_metadata_wrapper('node', $entity);
+
+  $prices = array();
+  foreach ($product->field_product_reference->getIterator() as $referenced) {
+    $prices[] = $referenced->commerce_price->value();
+  }
+
+  $initial = array('amount' => 0);
+  $price = array_reduce($prices, function ($carry, $item) {
+    return ($carry['amount'] > $item['amount']) ? $carry : $item;
+  }, $initial);
+
+  $currency_code = (isset($price['currency_code'])) ? $price['currency_code'] : NULL;
+
+  $output[$extra_field['field_name']] = array(
+    '#field_type' => 'field',
+    '#type' => 'item',
+    '#label' => $extra_field['label'],
+    '#field_name' => $extra_field['field_name'],
+    '#amount' => $price['amount'],
+    '#markup' => commerce_currency_format($price['amount'], $currency_code),
+    '#label_display' => 'hidden',
+  );
+}
+
+/**
+ * Implements hook_block_info_alter().
+ */
+function lulzbot_product_block_info_alter(&$blocks, $theme, $code_blocks) {
+
+  // Disable caching for this block to prevent incorrect price display.
+  if (isset($blocks['bean']['printers'])) {
+    $blocks['bean']['printers']['cache'] = DRUPAL_NO_CACHE;
+  }
+}
+
+function lulzbot_product_preprocess_node(&$vars) {
+
+  if (isset($vars['content']['product:commerce_price'])) {
+
+    $price_commerce =& $vars['content']['product:commerce_price'];
+    $price_components = $price_commerce['#items'][0]['data']['components'];
+    $price_currency = $price_components[0]['price']['currency_code'];
+
+    if (count($price_components) > 0) {
+      // do not include sales tax in original price calculation
+      $price_components = array_filter($price_components, function ($component) {
+        return (!preg_match('/^tax/', $component['name']));
+      });
+
+      // Should show original price *with* VAT (or other increases) before discount.
+      $price_original_amount = array_reduce($price_components, function ($carry, $cur) {
+        return ($cur['price']['amount'] > 0) ? $carry + $cur['price']['amount'] : $carry;
+      }, 0);
+
+      $price_commerce_amount = $price_commerce['#items'][0]['amount'];
+
+      // Write VAT markup.
+      $price_tax_markup = _lulzbot_product_price_markup($price_components);
+      if (!empty($price_tax_markup)) {
+        $vars['content']['product:tax_desc'] = $price_tax_markup;
+      }
+
+
+      if (isset($vars['content']['product:original_price'])) {
+
+        // Unset original price if hidden or if <= price.
+        $price_original_access = $vars['content']['product:original_price']['#access'];
+
+        if ($price_original_access) {
+
+          if ($price_original_amount > $price_commerce_amount) {
+            // Override original price with increases.
+            $vars['content']['product:original_price']['#markup'] = commerce_currency_format($price_original_amount, $price_currency);
+          }
+          else {
+            unset($vars['content']['product:original_price']);
+          }
+        }
+        else {
+          unset($vars['content']['product:original_price']);
+        }
+      }
+    }
+    else {
+      // No discounts.
+      unset($vars['content']['product:original_price']);
+    }
+  }
+}
+
+/**
+ * Utility function that builds onto an extra_fields array by relation type.
+ */
+function _lulzbot_product_build_extra_fields(&$extra_fields, $product_type) {
+  // This initiates a properly nested array and and sets a reference
+  // var. This $fields var just exists to save on typing.
+  $fields =& $extra_fields['node'][$product_type]['display'];
+
+  // If the 'display' array hasn't already been instantiated, make it an array.
+  if (!is_array($fields)) {
+    $fields = array();
+  }
+
+  $extra_field_name = 'product:original_price';
+
+  $fields[$extra_field_name] = array(
+    'label' => t('Product: Original Price'),
+    'description' => t('Original product price'),
+    'weight' => 100,
+    'field_name' => $extra_field_name,
+    'module' => 'lulzbot_product',
+    'callback' => 'lulzbot_product_extra_field_callback',
+  );
+}
+
+/**
+ * Utility function to hide any newly created extra_fields.
+ */
+function _lulzbot_product_hide_new_field($entity_type, $bundle, $field_name) {
+  $settings = field_bundle_settings($entity_type, $bundle);
+  $settings_updated = FALSE;
+
+  $entity_info = entity_get_info($entity_type, $bundle);
+  $view_modes = array_keys($entity_info['view modes']);
+  if (!in_array('default', $view_modes)) $view_modes[] = 'default';
+  foreach ($view_modes as $view_mode) {
+    if (!isset($settings['extra_fields']['display'][$field_name][$view_mode])) {
+      $settings_updated = TRUE;
+      $settings['extra_fields']['display'][$field_name][$view_mode] = array(
+        'weight' => 100,
+        'visible' => FALSE,
+      );
+    }
+  }
+
+  if ($settings_updated) {
+    field_bundle_settings($entity_type, $bundle, $settings);
+  }
+}
+
+/**
+ * Callback function for array_filter in relation_extra_fields_entity_view().
+ */
+function _lulzbot_product_filter_active_fields($item) {
+  foreach ($item['display'] as $view_mode => $display_info) {
+    if ($display_info['visible']) return TRUE;
+  }
+
+  return FALSE;
+}
+
+function _lulzbot_product_price_markup($components) {
+
+  $render = array(
+    '#prefix' => '<span class="price--tax">',
+    '#markup' => '',
+    '#suffix' => '</span>',
+  );
+
+  foreach($components as $component) {
+    if (preg_match('/vat/i', $component['name'])) {
+      $render['#markup'] = t('incl VAT');
+      break;
+    }
+  }
+
+  return !empty($render['#markup']) ? implode('', $render) : '';
+}

@@ -1,0 +1,84 @@
+//
+// Gallery mixins
+//
+
+@mixin product-thumbnails {
+  padding-top: vrem(4);
+  @include rule(top);
+  @include rule(bottom);
+  text-align: center;
+}
+
+@mixin product-thumbnail-item {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: vrem(4);
+  width: 100%;
+  max-height: 120px;
+  max-width: 160px;
+  overflow: hidden;
+  border: 1px solid $clr-border;
+
+  @include bp(small) {
+    display: inline-block;
+    margin-left: vrem(2);
+    margin-right: vrem(2);
+    width: 100%;
+    max-width: inherit;
+  }
+
+  &:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    width: 100%;
+    background-color: $green;
+
+    transition: all .2s ease-in-out;
+  }
+  &:hover {
+    &:before {
+      height: 6px;
+    }
+  }
+}
+
+@mixin product-thumbnail-item--small {
+  // position: relative;
+  // margin-left: auto;
+  // margin-right: auto;
+  margin-bottom: vrem(4);
+  max-height: 150px;
+  // min-height: 65px;
+  // width: 86px;
+  display: inline-block;
+  float: left;
+  overflow: hidden;
+  border: 1px solid $clr-border;
+
+  @include bp(small) {
+    max-height: 70px;
+  }
+
+  &:before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0;
+    width: 100%;
+    background-color: $green;
+
+    transition: all .2s ease-in-out;
+  }
+  &:hover {
+    &:before {
+      height: 6px;
+    }
+  }
+}

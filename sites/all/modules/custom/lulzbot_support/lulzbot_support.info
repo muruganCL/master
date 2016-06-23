@@ -1,0 +1,6 @@
+name = LulzBot Support
+description = Support configuration for lulzbot.com
+core = 7.x
+
+dependencies[] = cinc
+dependencies[] = lulzbot_base

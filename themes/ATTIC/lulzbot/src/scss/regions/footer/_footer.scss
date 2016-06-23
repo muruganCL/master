@@ -1,0 +1,104 @@
+//
+// Footer styles.
+//
+@import "footer-nav";
+
+#footer {
+  position: relative;
+  margin-top: vrem(26);
+  min-height: 170px;
+  z-index: 2;
+}
+
+.footer {
+
+  .ruled-top {
+    padding-top: vrem(6);
+    @include rule(top, rgba($gray-border, .2));
+  }
+
+  .logo-footer {
+    margin: 0 auto;
+    width: 79px;
+    height: 100px;
+    background-size: contain;
+    @include bp(medium) {
+      width: 100px;
+      margin: inherit;
+      float: left;
+    }
+  }
+}
+
+.footer--menu {
+  text-align: center;
+
+  @include bp(large) {
+    text-align: left;
+  }
+}
+
+.footer-content {
+  .social--footer {
+    margin-top: vrem(2);
+    margin-bottom: vrem(1);
+    text-align: center;
+    line-height: 0;
+    @include bp(medium) {
+      clear: left;
+      text-align: left;
+    }
+    @include bp(large) {
+      float: right;
+      clear: inherit;
+      margin-bottom: 0;
+      margin-top: 0;
+    }
+    .block-content {
+      display: inline-block;
+    }
+  }
+  @include bp(medium) {
+    @include span(16 at 1.5);
+    @include clearfix;
+
+    #block-menu-footer-menu {
+      text-align: center;
+      @include bp(medium) {
+        text-align: left;
+      }
+      @include bp(large) {
+        float: left;
+      }
+    }
+  }
+  @include bp(large) {
+    @include span(17 at 1.5);
+  }
+}
+.footer-copyright {
+  padding-top: vrem(1);
+  padding-bottom: vrem(2);
+  margin-top: vrem(1);
+  text-align: center;
+  font-family: $ff-lato-regular;
+  @include font-size("body--tiny");
+  color: #a1a1a1;
+  @include rule(top, rgba($gray-border, .2));
+
+  @include bp(medium) {
+    text-align: left;
+  }
+}
+
+.footer-contact {
+  @include font-size("body--tiny");
+}
+
+.footer-triangle-large {
+  @include footer-triangle(110px, $green, .6);
+}
+
+.footer-triangle-small {
+  @include footer-triangle(72.5px, $green-light);
+}

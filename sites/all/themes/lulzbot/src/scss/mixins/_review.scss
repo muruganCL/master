@@ -1,0 +1,59 @@
+//
+// Review styles
+//
+@import "susy";
+@import "susy/output/support";
+
+@mixin review {
+  @include clearfix;
+  font-family: $ff-lato-regular;
+  blockquote {
+    margin-bottom: vrem(4);
+    margin-left: 0;
+    margin-top: 0;
+    @include font-size(review--content);
+    color: $gray;
+  }
+  figcaption {
+    @include font-size(review--author);
+    font-family: $ff-lato-bold;
+  }
+  .review-title {
+    font-style: italic;
+  }
+  .dash {
+    display: inline-block;
+    position: relative;
+    width: 15px;
+    height: 12px;
+    margin-right: vrem(1);
+    &:before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      margin-top: -1px;
+      width: 15px;
+      height: 1px;
+      background-color: $gray-light;
+    }
+  }
+  .item-content {
+    margin-bottom: vrem(4);
+    @include bp(small) {
+      margin-bottom: 0;
+      // if .review-img exists
+      &:nth-last-child(2):first-child {
+        @include span(15 at 1);
+      }
+    }
+
+  }
+
+  .review-img {
+    max-width: 150px;
+    @include bp(small) {
+      @include span(4 at 17);
+      max-width: inherit;
+    }
+  }
+}

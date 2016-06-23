@@ -1,0 +1,21 @@
+{ "rules_skip_verification_for_paypal_wps_orders" : {
+    "LABEL" : "Skip verification for Paypal WPS orders",
+    "PLUGIN" : "reaction rule",
+    "ACTIVE" : false,
+    "WEIGHT" : "10",
+    "OWNER" : "rules",
+    "TAGS" : [ "paypal", "signifyd" ],
+    "REQUIRES" : [ "commerce_payment", "commerce_order", "commerce_checkout" ],
+    "ON" : { "commerce_checkout_complete" : [] },
+    "IF" : [
+      { "commerce_payment_selected_payment_method" : { "commerce_order" : [ "commerce_order" ], "method_id" : "paypal_wps" } }
+    ],
+    "DO" : [
+      { "commerce_order_update_status" : {
+          "commerce_order" : [ "commerce_order" ],
+          "order_status" : "processing_shipping"
+        }
+      }
+    ]
+  }
+}

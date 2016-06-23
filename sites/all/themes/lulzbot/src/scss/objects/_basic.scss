@@ -1,0 +1,27 @@
+//
+// Basic page
+//
+
+.basic-page--header {
+  display: table-cell;
+  vertical-align: bottom;
+
+  .basic-page--image & {
+    padding-bottom: vrem(8);
+    color: $white;
+
+    .basic-page--title {
+      color: $white;
+    }
+  }
+}
+
+.image-visible {
+  .basic-page--title {
+    color: $white;
+  }
+}
+
+.basic-page--intro {
+  max-width: 875px;
+}

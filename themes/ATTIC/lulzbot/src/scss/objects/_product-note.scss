@@ -1,0 +1,13 @@
+//
+// Product note
+//
+
+.product-note {
+  @include block-background;
+}
+.note-title {
+  @extend h4;
+  color: $white;
+  border-bottom-color: rgba($white, .3);
+  margin-bottom: vrem(3);
+}

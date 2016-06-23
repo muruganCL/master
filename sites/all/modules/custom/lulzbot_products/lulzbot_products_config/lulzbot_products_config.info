@@ -1,0 +1,8 @@
+name = LulzBot Products Config
+description = Product configurartion for lulzbot.com
+core = 7.x
+
+dependencies[] = cinc
+dependencies[] = image_delta_formatter
+dependencies[] = lulzbot_products
+dependencies[] = lulzbot_base

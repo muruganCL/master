@@ -1,0 +1,1 @@
+!function(t){Drupal.behaviors.radioactivity_history={attach:function(i,o){t.fn.sparkline&&t(".radioactivity-history").each(function(i){var o=t.parseJSON(t(this).text());o&&t(this).sparkline(o.values,{type:"bar",height:"100%",width:"100%",chartRangeMin:o.cutoff,tooltipFormat:o.tooltipFormat,tooltipValueLookups:{tooltips:o.tooltips}})})}}}(jQuery);

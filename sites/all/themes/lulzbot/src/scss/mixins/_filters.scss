@@ -1,0 +1,56 @@
+//
+// Filter mixins
+//
+
+@mixin horizontal-sort-links($element: a) {
+  font-family: $ff-lato-regular;
+  @include font-size(body--tiny);
+  .form-type-bef-link,
+  &.product-filter-top {
+    position: relative;
+
+    @include bp(medium) {
+      display: inline-block;
+    }
+
+    #{$element} {
+      position: relative;
+      display: inline-block;
+      margin-bottom: vrem(2);
+      margin-right: vrem(2);
+      padding-right: vrem(2);
+      color: $gray-black;
+      transition: color .3s ease-in-out;
+      &:hover {
+        color: rgba($gray-black, .7);
+      }
+    }
+
+    &[class*='selected'] {
+      &:after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: vrem(4);
+        height: 6px;
+        background-color: $clr-border;
+      }
+    }
+
+    &:not(:last-child) {
+      #{$element}:before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        height: 100%;
+        width: 1px;
+        @include bp(medium) {
+          background-color: $clr-border;
+        }
+      }
+    }
+  }
+}
